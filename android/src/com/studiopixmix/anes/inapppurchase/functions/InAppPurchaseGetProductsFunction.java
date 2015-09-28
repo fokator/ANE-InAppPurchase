@@ -61,7 +61,16 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 			@Override
 			public void run() {
 				InAppPurchaseExtension.logToAS("Getting products from the native store ...");
-				
+
+                /**
+                 * TODO FREObject validity
+                 * If you attempt to use an invalid FREObject in a Java API call, the Java API throws an exception.
+                 *
+                 * Any FREObject instance is valid only until the first FREFunction function on the call stack returns.
+                 * The first FREFunction function on the call stack function is the one that the runtime calls due to
+                 * the ActionScript side calling the ExtensionContext instance’s call() method. FREObjects are also only
+                 * valid in the thread used by the runtime to call the first FREFunction.
+                 */
 				// The local variables have to be final, so it can be used in the async task.
 				final Activity activity = context.getActivity();
 				final ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
