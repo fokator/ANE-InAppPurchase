@@ -16,7 +16,7 @@ import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
 public class InAppPurchaseConsumeProductFunction implements FREFunction {
 
 	@Override
-	public FREObject call(FREContext c, final FREObject[] args) {
+	public FREObject call(FREContext c, FREObject[] args) {
 		InAppPurchaseExtensionContext context = (InAppPurchaseExtensionContext) c;
 		String purchaseToken = null;
 		

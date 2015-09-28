@@ -73,7 +73,8 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
 	public FREObject call(FREContext c, final FREObject[] args) {
 		
 		context = (InAppPurchaseExtensionContext) c;
-		
+
+        // TODO FREObject validity
 		
 		context.executeWithService(new Runnable() {
 			@Override
