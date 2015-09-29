@@ -1,16 +1,8 @@
 package com.studiopixmix.anes.inapppurchase.functions;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
-
 import com.adobe.fre.FREArray;
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
@@ -19,6 +11,12 @@ import com.android.vending.billing.IInAppBillingService;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtension;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * A function used to retrieve the product info for the given product IDs (formated in a String Vector). This method
@@ -55,25 +53,24 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 
 	@Override
 	public FREObject call(FREContext c, final FREObject[] args) {
-		
+		/**
+		 * FREObject validity
+		 * If you attempt to use an invalid FREObject in a Java API call, the Java API throws an exception.
+		 *
+		 * Any FREObject instance is valid only until the first FREFunction function on the call stack returns.
+		 * The first FREFunction function on the call stack function is the one that the runtime calls due to
+		 * the ActionScript side calling the ExtensionContext instance’s call() method. FREObjects are also only
+		 * valid in the thread used by the runtime to call the first FREFunction.
+		 */
 		final InAppPurchaseExtensionContext context = (InAppPurchaseExtensionContext) c;
+		final ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
 		context.executeWithService(new Runnable() {
 			@Override
 			public void run() {
 				InAppPurchaseExtension.logToAS("Getting products from the native store ...");
 
-                /**
-                 * TODO FREObject validity
-                 * If you attempt to use an invalid FREObject in a Java API call, the Java API throws an exception.
-                 *
-                 * Any FREObject instance is valid only until the first FREFunction function on the call stack returns.
-                 * The first FREFunction function on the call stack function is the one that the runtime calls due to
-                 * the ActionScript side calling the ExtensionContext instance’s call() method. FREObjects are also only
-                 * valid in the thread used by the runtime to call the first FREFunction.
-                 */
 				// The local variables have to be final, so it can be used in the async task.
 				final Activity activity = context.getActivity();
-				final ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
 				final IInAppBillingService iapService = context.getInAppBillingService();
 				
 				InAppPurchaseExtension.logToAS("Executing in background ... Activity : " + activity + " (activity package name : " + activity.getPackageName() + ") ; Service : " + iapService);

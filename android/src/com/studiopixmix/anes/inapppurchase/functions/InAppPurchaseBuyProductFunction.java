@@ -1,16 +1,10 @@
 package com.studiopixmix.anes.inapppurchase.functions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import org.json.JSONObject;
-
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
@@ -18,6 +12,10 @@ import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtension;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
 import com.studiopixmix.anes.inapppurchase.activities.BillingActivity;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * A function that handles the purchase flow and has also a <code>consumeProduct</code> static method
@@ -71,29 +69,29 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
 	
 	@Override
 	public FREObject call(FREContext c, final FREObject[] args) {
-		
 		context = (InAppPurchaseExtensionContext) c;
+		// make arguments final FREObject validity
+		final FREObject productIdObj = args[0];
+		final FREObject payloadObj = args[1];
 
-        // TODO FREObject validity
-		
 		context.executeWithService(new Runnable() {
 			@Override
 			public void run() {
 				String productId = null;
 				String payload = null;
 				Bundle buyIntentBundle = null;
-				
+
 				// Retrieving the desired product ID.
 				try {
-					productId = args[0].getAsString();
-					payload = args[1].getAsString();
+					productId = productIdObj.getAsString();
+					payload = payloadObj.getAsString();
 				}
-				catch(Exception e) { 
-					InAppPurchaseExtension.logToAS("Error while retrieving the product ID! " + e.toString()); 
-					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString()); 
+				catch(Exception e) {
+					InAppPurchaseExtension.logToAS("Error while retrieving the product ID! " + e.toString());
+					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString());
 					return;
 				}
-				
+
 				try {
 					buyIntentBundle = context.getInAppBillingService().getBuyIntent(InAppPurchaseExtension.API_VERSION, context.getActivity().getPackageName(), productId, "inapp", payload);
 				}
