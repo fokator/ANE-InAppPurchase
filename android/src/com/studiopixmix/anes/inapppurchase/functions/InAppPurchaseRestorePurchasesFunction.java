@@ -1,15 +1,8 @@
 package com.studiopixmix.anes.inapppurchase.functions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.json.JSONArray;
-
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.RemoteException;
-
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
@@ -17,6 +10,10 @@ import com.android.vending.billing.IInAppBillingService;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtension;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A function that retrieves the user's previous purchase by requesting the store. This method returns 
@@ -78,7 +75,7 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
 				
 				if(purchaseIds == null || purchaseIds.size() == 0) {
 					InAppPurchaseExtension.logToAS("no purchases to restore, returning ...");
-					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, null);
+					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, "");
 					return;
 				}
 				
