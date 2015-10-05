@@ -16,7 +16,6 @@ import org.json.JSONObject;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * A function used to retrieve the product info for the given product IDs (formated in a String Vector). This method
@@ -33,23 +32,6 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 	private static final String RESPONSE_CODE = "RESPONSE_CODE";
 	/** The key used for the products details, formated in an ArrayList of JSONs. */
 	private static final String DETAILS_LIST = "DETAILS_LIST";
-	
-	/** 
-	 * The error codes messages, in String, as described in the Google documentation. 
-	 * 
-	 * @see <a href="http://developer.android.com/google/play/billing/billing_reference.html#billing-codes">Google response codes documentation</a>
-	 */
-	private static final ArrayList<String> ERRORS_MESSAGES = new ArrayList<String>(Arrays.asList(
-				"Success.",
-				"User interrupted the request or cancelled the dialog!",
-				"The network connection is down!",
-				"Billing API version is not supported for the type requested!",
-				"Requested product is not available for purchase!",
-				"Invalid arguments provided to the API! Have you checked that your application is set for in-app purchases and has the necessary permissions in the manifest?",
-				"Fatal error during the API action!",
-				"Failure to purchase since item is already owned!",
-				"Failure to consume since item is not owned"
-			));
 
 	@Override
 	public FREObject call(FREContext c, final FREObject[] args) {
@@ -105,7 +87,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 						
 						// Parsing the received JSON if the response code is success.
 						int responseCode = skuDetails.getInt(RESPONSE_CODE);
-						InAppPurchaseExtension.logToAS("Response code : " + ERRORS_MESSAGES.get(responseCode));
+						InAppPurchaseExtension.logToAS("Response code : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
 						ArrayList<String> detailsJson;
 						String finalJSON = null;
 						if(responseCode == 0) {
@@ -172,7 +154,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 							}
 						}
 						else {
-							InAppPurchaseExtension.logToAS("Error while loading the products : " + ERRORS_MESSAGES.get(responseCode));
+							InAppPurchaseExtension.logToAS("Error while loading the products : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
 							return null;
 						}
 						

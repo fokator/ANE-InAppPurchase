@@ -1,22 +1,17 @@
 package com.studiopixmix.anes.inapppurchase;
 
+import android.content.ComponentName;
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import com.adobe.fre.FREContext;
+import com.adobe.fre.FREFunction;
+import com.android.vending.billing.IInAppBillingService;
+import com.studiopixmix.anes.inapppurchase.functions.*;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import android.content.ComponentName;
-import android.content.ServiceConnection;
-import android.os.IBinder;
-
-import com.adobe.fre.FREContext;
-import com.adobe.fre.FREFunction;
-import com.android.vending.billing.IInAppBillingService;
-import com.studiopixmix.anes.inapppurchase.functions.InAppPurchaseBuyProductFunction;
-import com.studiopixmix.anes.inapppurchase.functions.InAppPurchaseConsumeProductFunction;
-import com.studiopixmix.anes.inapppurchase.functions.InAppPurchaseGetProductsFunction;
-import com.studiopixmix.anes.inapppurchase.functions.InAppPurchaseInitFunction;
-import com.studiopixmix.anes.inapppurchase.functions.InAppPurchaseRestorePurchasesFunction;
 
 public class InAppPurchaseExtensionContext extends FREContext {
 	
@@ -66,7 +61,8 @@ public class InAppPurchaseExtensionContext extends FREContext {
 		   public void onServiceConnected(ComponentName name, IBinder service) {
 		       mService = IInAppBillingService.Stub.asInterface(service);
 		       InAppPurchaseExtension.logToAS("Service connected.");
-		       
+
+			   // TODO dispatch initialize event
 		       processTasksQueue();
 		   }
 		};

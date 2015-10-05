@@ -47,7 +47,7 @@ public class BillingActivity extends Activity {
 			developerPayLoad = extras.getString("DEV_PAYLOAD");
 		
 			// Then starts the pending intent.
-			this.startIntentSenderForResult(pendingIntent.getIntentSender(), requestCode, new Intent(), 0, 0, 0);
+			startIntentSenderForResult(pendingIntent.getIntentSender(), requestCode, new Intent(), 0, 0, 0);
 		}
 		catch (Exception e) {
 			InAppPurchaseExtension.logToAS("Error while starting the buy intent! " + InAppPurchaseExtension.getStackString(e));

@@ -12,7 +12,6 @@ import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -28,24 +27,6 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
 	/** The continuation token used if the list was too long to fit in one request. If this property is not null in the response Bundle, a new call to
 	 * <code>getPurchases</code> should be made with the continuation token as parameter.. */
 	private static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
-	
-	
-	/** 
-	 * The error codes messages, in String, as described in the Google documentation. 
-	 * 
-	 * @see <a href="http://developer.android.com/google/play/billing/billing_reference.html#billing-codes">Google response codes documentation</a>
-	 */
-	private static final ArrayList<String> ERRORS_MESSAGES = new ArrayList<String>(Arrays.asList(
-				"Success.",
-				"User interrupted the request or cancelled the dialog!",
-				"The network connection is down!",
-				"Billing API version is not supported for the type requested!",
-				"Requested product is not available for purchase!",
-				"Invalid arguments provided to the API! Have you checked that your application is set for in-app purchases and has the necessary permissions in the manifest?",
-				"Fatal error during the API action!",
-				"Failure to purchase since item is already owned!",
-				"Failure to consume since item is not owned"
-			));
 
 	@Override
 	public FREObject call(FREContext c, FREObject[] args) {
@@ -122,7 +103,7 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
 		}
 		
 		else {
-			InAppPurchaseExtension.logToAS("Error while loading the products : " + ERRORS_MESSAGES.get(responseCode));
+			InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
 		}
 		
 		return productsIds;

@@ -20,7 +20,11 @@ public class InAppPurchaseInitFunction implements FREFunction {
 		// Binds the in-app billing service to the ServiceConnection created above.
 		Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
 		serviceIntent.setPackage("com.android.vending");
-		context.getActivity().bindService(serviceIntent, ((InAppPurchaseExtensionContext) context).getServiceConnection(), Context.BIND_AUTO_CREATE);
+
+		InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
+		context.getActivity().bindService(
+				serviceIntent, extensionContext.getServiceConnection(), Context.BIND_AUTO_CREATE
+		);
 		
 		return null;
 	}

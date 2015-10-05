@@ -14,9 +14,6 @@ import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
 import com.studiopixmix.anes.inapppurchase.activities.BillingActivity;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 /**
  * A function that handles the purchase flow and has also a <code>consumeProduct</code> static method
  * that can be used anywhere on the native side.
@@ -39,25 +36,7 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
     public static final int BILLING_RESPONSE_RESULT_ERROR = 6;
     public static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
     public static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
-	
-	/** 
-	 * The error codes messages, in String, as described in the Google documentation. 
-	 * 
-	 * @see <a href="http://developer.android.com/google/play/billing/billing_reference.html#billing-codes">Google response codes documentation</a>
-	 */
-	private static final ArrayList<String> ERRORS_MESSAGES = new ArrayList<String>(Arrays.asList(
-				"Success.",
-				"User interrupted the request or cancelled the dialog!",
-				"The network connection is down!",
-				"Billing API version is not supported for the type requested!",
-				"Requested product is not available for purchase!",
-				"Invalid arguments provided to the API! Have you checked that your application is set for in-app purchases and has the necessary permissions in the manifest?",
-				"Fatal error during the API action!",
-				"Failure to purchase since item is already owned!",
-				"Failure to consume since item is not owned"
-			));
 
-	
 	// PROPERTIES :
 	/** The context passed to the main method, it will be used in the activity response. */
 	private static InAppPurchaseExtensionContext context;
@@ -127,8 +106,8 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
 					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, ""); 
 				}
 				else {
-					InAppPurchaseExtension.logToAS("Error while the buy intent : " + ERRORS_MESSAGES.get(responseCode));
-					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ERRORS_MESSAGES.get(responseCode));
+					InAppPurchaseExtension.logToAS("Error while the buy intent : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
 				}
 			}
 		});
@@ -194,8 +173,8 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
 					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, "");
 			    }
 			    else {
-			    	InAppPurchaseExtension.logToAS("The purchase failed! " + ERRORS_MESSAGES.get(responseCode));
-					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ERRORS_MESSAGES.get(responseCode));
+			    	InAppPurchaseExtension.logToAS("The purchase failed! " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+					context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
 			    }
 			}
 		}
