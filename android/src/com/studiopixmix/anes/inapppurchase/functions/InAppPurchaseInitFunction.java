@@ -2,7 +2,6 @@ package com.studiopixmix.anes.inapppurchase.functions;
 
 import android.content.Context;
 import android.content.Intent;
-
 import com.adobe.fre.FREContext;
 import com.adobe.fre.FREFunction;
 import com.adobe.fre.FREObject;
@@ -14,27 +13,25 @@ import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
  */
 public class InAppPurchaseInitFunction implements FREFunction {
 
-	@Override
-	public FREObject call(FREContext context, FREObject[] args) {
-		
-		// Binds the in-app billing service to the ServiceConnection created above.
-		Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
-		serviceIntent.setPackage("com.android.vending");
+    @Override
+    public FREObject call(FREContext context, FREObject[] args) {
 
-		InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
-		context.getActivity().bindService(
-				serviceIntent, extensionContext.getServiceConnection(), Context.BIND_AUTO_CREATE
-		);
-		
-		return null;
-	}
-	
-	
-	
-	/**
-	 * Retrieves the previous purchases to check if any of them has not been consumed yet. 
-	 * If it is the case, consumes it in an asynchronous task.
-	 */
+        // Binds the in-app billing service to the ServiceConnection created above.
+        Intent serviceIntent = new Intent("com.android.vending.billing.InAppBillingService.BIND");
+        serviceIntent.setPackage("com.android.vending");
+
+        InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
+        context.getActivity().bindService(
+                serviceIntent, extensionContext.getServiceConnection(), Context.BIND_AUTO_CREATE
+        );
+
+        return null;
+    }
+
+    /**
+     * Retrieves the previous purchases to check if any of them has not been consumed yet.
+     * If it is the case, consumes it in an asynchronous task.
+     */
 //	public static void checkPreviousPurchases(InAppPurchaseExtensionContext context) {
 //		
 //		final InAppPurchaseExtensionContext c = context;
