@@ -2,5 +2,5 @@
 <!-- only for idea module information
 https://source.android.com/source/build-numbers.html -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-sdk android:minSdkVersion="4" />
+    <uses-sdk android:minSdkVersion="5" />
 </manifest>
