@@ -36,6 +36,16 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
      */
     private static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
 
+    /**
+     * StringArrayList containing the purchase information
+     */
+    private static final String INAPP_PURCHASE_DATA_LIST = "INAPP_PURCHASE_DATA_LIST";
+
+    /**
+     * StringArrayList containing the signatures
+     */
+    private static final String INAPP_DATA_SIGNATURE_LIST = "INAPP_DATA_SIGNATURE_LIST";
+
     @Override
     public FREObject call(FREContext c, FREObject[] args) {
 
@@ -90,6 +100,11 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
 
         if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
             productsIds = bundle.getStringArrayList(INAPP_PURCHASE_ITEM_LIST);
+
+            // TODO ...
+            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(INAPP_PURCHASE_DATA_LIST));
+            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(INAPP_DATA_SIGNATURE_LIST));
+            
             InAppPurchaseExtension.logToAS("Native store returned " + productsIds);
             String cToken = bundle.getString(INAPP_CONTINUATION_TOKEN);
 
