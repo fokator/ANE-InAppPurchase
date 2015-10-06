@@ -191,9 +191,11 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
 
         int response = -1;
         try {
-            response = mContext.getInAppBillingService().consumePurchase(
-                    InAppPurchaseExtension.API_VERSION, packageName, item.getString("purchaseToken")
-            );
+            IInAppBillingService service = mContext.getInAppBillingService();
+            String purchaseToken = item.getString("purchaseToken");
+
+            response = service.consumePurchase(InAppPurchaseExtension.API_VERSION, packageName, purchaseToken);
+
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS(InAppPurchaseExtension.getStackString(e));
         }

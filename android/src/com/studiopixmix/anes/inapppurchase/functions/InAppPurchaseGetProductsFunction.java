@@ -113,25 +113,23 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
     private static String createResult(ArrayList<String> detailsJson, ArrayList<String> productsIds) {
 
         ArrayList<JSONObject> details = new ArrayList<JSONObject>();
-        JSONObject currentObject;
-        JSONObject currentJsonObject;
 
         // Number formatter used to format the localized price returned by Google to a normal double.
         NumberFormat format = NumberFormat.getInstance();
         format.setMinimumFractionDigits(2);
-        Number number;
 
         int i, length = detailsJson.size();
         for (i = 0; i < length; i++) {
             try {
-                currentJsonObject = new JSONObject(detailsJson.get(i));
-                currentObject = new JSONObject();
+                JSONObject currentJsonObject = new JSONObject(detailsJson.get(i));
+
+                JSONObject currentObject = new JSONObject();
                 currentObject.put("id", currentJsonObject.get("productId"));
                 currentObject.put("title", currentJsonObject.get("title"));
                 currentObject.put("description", currentJsonObject.get("description"));
 
                 // Formats the price to an amount rounded to 2 decimals.
-                number = format.parse(currentJsonObject.get("price_amount_micros").toString());
+                Number number = format.parse(currentJsonObject.get("price_amount_micros").toString());
                 currentObject.put("price", format.parse(String.format("%.2f", number.doubleValue() / 1000000.0)).doubleValue());
 
                 currentObject.put("priceCurrencyCode", currentJsonObject.get("price_currency_code"));
@@ -152,8 +150,8 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 
         InAppPurchaseExtension.logToAS("Processed.");
         InAppPurchaseExtension.logToAS("Found " + details.size() + " products.");
-        JSONArray data = new JSONArray(details);
 
+        JSONArray data = new JSONArray(details);
         String finalJSON = data.toString();
 
         InAppPurchaseExtension.logToAS("Returning " + finalJSON + " to the app.");
@@ -188,7 +186,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
     }
 
     /**
-     * Dispatches a <code>PRODUCTS_INVALID</code> with the given collection of string as related propduct IDs.
+     * Dispatches a <code>PRODUCTS_INVALID</code> with the given collection of string as related product IDs.
      */
     private static void dispatchInvalidProducts(ArrayList<String> productIds, FREContext context) {
         JSONArray invalidProductsJson = new JSONArray();
@@ -196,7 +194,6 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         for (i = 0, length = productIds.size(); i < length; i++) {
             invalidProductsJson.put(productIds.get(i));
         }
-
         context.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_INVALID, invalidProductsJson.toString());
     }
 
