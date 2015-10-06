@@ -14,13 +14,13 @@ public class InAppPurchaseExtension implements FREExtension {
      * The in-app billing API version.
      */
     public static final int API_VERSION = 3;
-
-
+    
     // PROPERTIES :
     /**
      * The logging TAG.
      */
     public static String TAG = "InAppPurchaseExtension";
+
     /**
      * A reference to the InAppPurchase extension context.
      */

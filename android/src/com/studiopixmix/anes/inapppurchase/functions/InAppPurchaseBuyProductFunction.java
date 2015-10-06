@@ -30,16 +30,6 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
      */
     private static final int BUY_REQUEST_CODE = 111111;  //  -> arbitrary picked request code.
 
-    // Billing response codes
-    public static final int BILLING_RESPONSE_RESULT_OK = 0;
-    public static final int BILLING_RESPONSE_RESULT_USER_CANCELED = 1;
-    public static final int BILLING_RESPONSE_RESULT_BILLING_UNAVAILABLE = 3;
-    public static final int BILLING_RESPONSE_RESULT_ITEM_UNAVAILABLE = 4;
-    public static final int BILLING_RESPONSE_RESULT_DEVELOPER_ERROR = 5;
-    public static final int BILLING_RESPONSE_RESULT_ERROR = 6;
-    public static final int BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED = 7;
-    public static final int BILLING_RESPONSE_RESULT_ITEM_NOT_OWNED = 8;
-
     // PROPERTIES :
     /**
      * The context passed to the main method, it will be used in the activity response.
@@ -54,38 +44,26 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
     public FREObject call(FREContext c, FREObject[] args) {
         mContext = (InAppPurchaseExtensionContext) c;
 
-        final FREObject productIdObj = args[0];
-        final FREObject payloadObj = args[1];
-
-        InAppPurchaseExtension.logToAS("0");
-
-        final String productId;
-        final String payload;
+        String productId, payload;
         try {
-            productId = productIdObj.getAsString();
-            payload = payloadObj.getAsString();
-        } catch (Exception e) {
+            productId = args[0].getAsString();
+            payload = args[1].getAsString();
 
+        } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while retrieving the product ID! " + e.toString());
             mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString());
-
             return null;
         }
-
-        InAppPurchaseExtension.logToAS("1");
 
         buyProduct(productId, payload);
 
         return null;
     }
 
-    public void buyProduct(String productId, String payload) {
+    private void buyProduct(String productId, String payload) {
 
-        Bundle buyIntentBundle = null;
-
-        // Retrieving the desired product ID.
+        Bundle buyIntentBundle;
         try {
-
             IInAppBillingService service = mContext.getInAppBillingService();
             Activity act = mContext.getActivity();
             String pkgName = act.getPackageName();
@@ -99,29 +77,32 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
         }
 
         int responseCode = buyIntentBundle.getInt(RESPONSE_CODE);
-        if (responseCode == BILLING_RESPONSE_RESULT_OK) {
+        switch (responseCode) {
+            case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
+                // Everything's fine, starting the buy intent.
+                PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
+                try {
+                    // Creates the new activity to do the billing process, and adding it the extra info to start the request.
+                    Intent intent = new Intent(mContext.getActivity(), BillingActivity.class);
+                    intent.putExtra("PENDING_INTENT", pendingIntent);
+                    intent.putExtra("REQUEST_CODE", BUY_REQUEST_CODE);
+                    intent.putExtra("DEV_PAYLOAD", payload);
+                    mContext.getActivity().startActivity(intent);
+                } catch (Exception e) {
+                    InAppPurchaseExtension.logToAS("Error while the buy intent!\n " + e.toString() + "\n" + InAppPurchaseExtension.getStackString(e));
+                    mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString());
+                }
 
-            // Everything's fine, starting the buy intent.
-            PendingIntent pendingIntent = buyIntentBundle.getParcelable("BUY_INTENT");
-            try {
+                break;
+            case ResponseCodes.BILLING_RESPONSE_RESULT_USER_CANCELED:
+                InAppPurchaseExtension.logToAS("User cancelled the purchase.");
+                mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, "");
 
-                // Creates the new activity to do the billing process, and adding it the extra info to start the request.
-                Intent intent = new Intent(mContext.getActivity(), BillingActivity.class);
-                intent.putExtra("PENDING_INTENT", pendingIntent);
-                intent.putExtra("REQUEST_CODE", BUY_REQUEST_CODE);
-                intent.putExtra("DEV_PAYLOAD", payload);
-                mContext.getActivity().startActivity(intent);
-            } catch (Exception e) {
-                InAppPurchaseExtension.logToAS("Error while the buy intent!\n " + e.toString() + "\n" + InAppPurchaseExtension.getStackString(e));
-                mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString());
-                return;
-            }
-        } else if (responseCode == BILLING_RESPONSE_RESULT_USER_CANCELED) {
-            InAppPurchaseExtension.logToAS("User cancelled the purchase.");
-            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, "");
-        } else {
-            InAppPurchaseExtension.logToAS("Error while the buy intent : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
-            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+                break;
+            default:
+                InAppPurchaseExtension.logToAS("Error while the buy intent : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+                mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+
         }
     }
 
@@ -129,61 +110,69 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
      * The response of the pending intent.
      */
     public static void onIntentFinished(Activity sourceActivity, int requestCode, int resultCode, Intent data, String devPayload) {
+
         InAppPurchaseExtension.logToAS("Intent finished");
 
         sourceActivity.finish();
-        sourceActivity = null;
 
         if (requestCode == BUY_REQUEST_CODE) {
 
             if (resultCode == Activity.RESULT_CANCELED) {
+
                 InAppPurchaseExtension.logToAS("Purchase has been cancelled!");
                 mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, "");
             } else {
+
                 int responseCode = data.getIntExtra("RESPONSE_CODE", 0);
                 String purchaseData = data.getStringExtra("INAPP_PURCHASE_DATA");
                 String dataSignature = data.getStringExtra("INAPP_DATA_SIGNATURE");
 
-                if (responseCode == BILLING_RESPONSE_RESULT_OK) {
-                    JSONObject item = null;
-                    Boolean hasSimilarPayload = false;
-                    try {
-                        item = new JSONObject(purchaseData);
-                        hasSimilarPayload = devPayload.equals(item.getString("developerPayload"));
-                    } catch (Exception e) {
-                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, "Error while converting the bought product data to JSONObject!");
-                        return;
-                    }
+                switch (responseCode) {
+                    case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
 
+                        JSONObject item = null;
+                        Boolean hasSimilarPayload = false;
+                        try {
+                            item = new JSONObject(purchaseData);
+                            hasSimilarPayload = devPayload.equals(item.getString("developerPayload"));
+                        } catch (Exception e) {
+                            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, "Error while converting the bought product data to JSONObject!");
+                            return;
+                        }
 
-                    if (!hasSimilarPayload) {
-                        onPurchaseVerificationFailed(item, mContext.getActivity().getPackageName());
-                        return;
-                    }
+                        if (!hasSimilarPayload) {
 
-                    JSONObject jsonObject = new JSONObject();
-                    try {
-                        jsonObject.put("productId", item.getString("productId"));
-                        jsonObject.put("transactionTimestamp", item.getInt("purchaseTime"));
-                        jsonObject.put("developerPayload", item.get("developerPayload"));
-                        jsonObject.put("purchaseToken", item.get("purchaseToken"));
-                        jsonObject.put("orderId", item.get("orderId"));
-                        jsonObject.put("signature", dataSignature);
-                        jsonObject.put("playStoreResponse", purchaseData);
-                    } catch (Exception e) {
-                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, "Error while creating the returned JSONObject!");
-                        return;
-                    }
+                            onPurchaseVerificationFailed(item, mContext.getActivity().getPackageName());
+                            return;
+                        }
 
-                    InAppPurchaseExtension.logToAS("The product has been successfully bought! returning it with the event ...");
-                    mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_SUCCESS, jsonObject.toString());
+                        JSONObject jsonObject = new JSONObject();
+                        try {
+                            jsonObject.put("productId", item.getString("productId"));
+                            jsonObject.put("transactionTimestamp", item.getInt("purchaseTime"));
+                            jsonObject.put("developerPayload", item.get("developerPayload"));
+                            jsonObject.put("purchaseToken", item.get("purchaseToken"));
+                            jsonObject.put("orderId", item.get("orderId"));
+                            jsonObject.put("signature", dataSignature);
+                            jsonObject.put("playStoreResponse", purchaseData);
+                        } catch (Exception e) {
+                            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, "Error while creating the returned JSONObject!");
+                            return;
+                        }
 
-                } else if (responseCode == BILLING_RESPONSE_RESULT_USER_CANCELED) {
-                    InAppPurchaseExtension.logToAS("Purchase has been cancelled!");
-                    mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, "");
-                } else {
-                    InAppPurchaseExtension.logToAS("The purchase failed! " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
-                    mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+                        InAppPurchaseExtension.logToAS("The product has been successfully bought! returning it with the event ...");
+                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_SUCCESS, jsonObject.toString());
+
+                        break;
+                    case ResponseCodes.BILLING_RESPONSE_RESULT_USER_CANCELED:
+                        InAppPurchaseExtension.logToAS("Purchase has been cancelled!");
+                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, "");
+
+                        break;
+                    default:
+                        InAppPurchaseExtension.logToAS("The purchase failed! " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+
                 }
             }
         }

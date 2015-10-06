@@ -24,10 +24,12 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
      * The list of the productIds previously bought by the user.
      */
     private static final String INAPP_PURCHASE_ITEM_LIST = "INAPP_PURCHASE_ITEM_LIST";
+
     /**
      * The response code key used when getting the products details. The differents codes are detailed below.
      */
     private static final String RESPONSE_CODE = "RESPONSE_CODE";
+
     /**
      * The continuation token used if the list was too long to fit in one request. If this property is not null in the response Bundle, a new call to
      * <code>getPurchases</code> should be made with the continuation token as parameter..
@@ -55,6 +57,7 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         }
 
         if (purchaseIds == null || purchaseIds.size() == 0) {
+
             InAppPurchaseExtension.logToAS("no purchases to restore, returning ...");
             context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, "");
             return null;
@@ -62,8 +65,9 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
 
         // We have at least 1 purchase to restore.
         String purchases = purchaseIds.get(0);
-        for (int i = 1; i < purchaseIds.size(); i++)
+        for (int i = 1; i < purchaseIds.size(); i++) {
             purchases += "," + purchaseIds.get(i);
+        }
 
         InAppPurchaseExtension.logToAS("Found " + purchaseIds.size() + " purchases to restore ... returning their IDs : " + purchases);
         context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, purchases);
@@ -71,21 +75,20 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         return null;
     }
 
-
     /**
      * Recursively calls <code>getPruchases</code> to retrieve all the purchased products for the user. The method uses a continuation token
      * to handle the case where the list of purchases is too large to fit in one request.
      *
      * @throws RemoteException
      */
-    private List<String> getPurchaseIds(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException {
+    private static List<String> getPurchaseIds(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException {
         Bundle bundle = iapService.getPurchases(InAppPurchaseExtension.API_VERSION, packageName, type, continuationToken);
 
         // Parsing the received JSON if the response code is success.
         int responseCode = bundle.getInt(RESPONSE_CODE);
         ArrayList<String> productsIds = null;
 
-        if (responseCode == 0) {
+        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
             productsIds = bundle.getStringArrayList(INAPP_PURCHASE_ITEM_LIST);
             InAppPurchaseExtension.logToAS("Native store returned " + productsIds);
             String cToken = bundle.getString(INAPP_CONTINUATION_TOKEN);
@@ -104,5 +107,4 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
 
         return productsIds;
     }
-
 }

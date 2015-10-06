@@ -29,11 +29,11 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
 
         return null;
     }
-    
+
     /**
      * Consumes the product related to the given purchase token.
      */
-    public static void consumeProduct(final String purchaseToken, final InAppPurchaseExtensionContext context) {
+    public static void consumeProduct(String purchaseToken, InAppPurchaseExtensionContext context) {
 
         int response = -1;
         try {
@@ -45,6 +45,7 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
         }
 
         if (response == 0) {
+
             try {
                 InAppPurchaseExtension.logToAS("The product has been successfully consumed! returning it with the event ...");
                 context.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_SUCCESS, purchaseToken);
@@ -53,6 +54,7 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
                 context.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed!");
             }
         } else {
+
             InAppPurchaseExtension.logToAS("The consume product has failed!");
             context.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed!");
         }

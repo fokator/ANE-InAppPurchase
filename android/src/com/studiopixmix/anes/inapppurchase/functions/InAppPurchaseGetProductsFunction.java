@@ -29,27 +29,31 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
      * The key used for the products IDs bundle.
      */
     private static final String ITEM_ID_LIST = "ITEM_ID_LIST";
+
     /**
      * The response code key used when getting the products details. The differents codes are detailed below.
      */
     private static final String RESPONSE_CODE = "RESPONSE_CODE";
+
     /**
      * The key used for the products details, formated in an ArrayList of JSONs.
      */
     private static final String DETAILS_LIST = "DETAILS_LIST";
 
     @Override
-    public FREObject call(FREContext c, final FREObject[] args) {
+    public FREObject call(FREContext context, final FREObject[] args) {
 
-        InAppPurchaseExtensionContext context = (InAppPurchaseExtensionContext) c;
-        ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
         InAppPurchaseExtension.logToAS("Getting products from the native store ...");
 
-        // The local variables have to be final, so it can be used in the async task.
-        final Activity activity = context.getActivity();
-        final IInAppBillingService iapService = context.getInAppBillingService();
+        InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
+        ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
 
-        InAppPurchaseExtension.logToAS("Executing in background ... Activity : " + activity + " (activity package name : " + activity.getPackageName() + ") ; Service : " + iapService);
+        // The local variables have to be final, so it can be used in the async task.
+        Activity activity = extensionContext.getActivity();
+        IInAppBillingService iapService = extensionContext.getInAppBillingService();
+
+        InAppPurchaseExtension.logToAS("Executing in background ... Activity : " + activity
+                + " (activity package name : " + activity.getPackageName() + ") ; Service : " + iapService);
 
         // Converts the given data to a bundle of products IDs.
         Bundle products = new Bundle();
@@ -57,7 +61,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         InAppPurchaseExtension.logToAS("Requesting the store for the products " + productsIds.toString());
 
         // Retrieves the products details.
-        Bundle skuDetails = null;
+        Bundle skuDetails;
         try {
             skuDetails = iapService.getSkuDetails(InAppPurchaseExtension.API_VERSION, activity.getPackageName(), "inapp", products);
         } catch (Exception e) {
@@ -66,26 +70,27 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         }
 
         if (skuDetails == null) {
+
             InAppPurchaseExtension.logToAS("Error while retrieving the products details : The returned products bundle is null!");
             return null;
         }
 
         InAppPurchaseExtension.logToAS("Processing the received products bundle from the store ...");
 
-
         // Parsing the received JSON if the response code is success.
         int responseCode = skuDetails.getInt(RESPONSE_CODE);
         InAppPurchaseExtension.logToAS("Response code : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
         ArrayList<String> detailsJson;
-        String finalJSON = null;
-        if (responseCode == 0) {
+        String finalJSON;
+        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
+
             detailsJson = skuDetails.getStringArrayList(DETAILS_LIST);
 
             if (detailsJson == null || detailsJson.size() == 0) {
                 InAppPurchaseExtension.logToAS("No products details retrieved!");
 
                 if (productsIds.size() > 0)
-                    dispatchInvalidProducts(productsIds, context);
+                    dispatchInvalidProducts(productsIds, extensionContext);
 
                 return null;
             }
@@ -137,23 +142,25 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 
             // Check if there is IDs left in productIds. If this is the case, there were invalid products in the parameters.
             if (productsIds.size() > 0) {
-                dispatchInvalidProducts(productsIds, context);
+
+                dispatchInvalidProducts(productsIds, extensionContext);
             }
         } else {
-            InAppPurchaseExtension.logToAS("Error while loading the products : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+            InAppPurchaseExtension.logToAS("Error while loading the products : "
+                    + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
             return null;
         }
 
-        context.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, finalJSON);
+        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, finalJSON);
 
         return null;
     }
-    
+
     /**
      * Returns the given FREArray as an String ArrayList. This method is used to cast the products IDs in FREArray
      * into a java collection to communicate with the Google in-app billing service.
      */
-    private ArrayList<String> FREArrayToArrayList(FREArray array) {
+    private static ArrayList<String> FREArrayToArrayList(FREArray array) {
         int i;
         long length = 0;
         ArrayList<String> list = new ArrayList<String>();
@@ -178,11 +185,12 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
     /**
      * Dispatches a <code>PRODUCTS_INVALID</code> with the given collection of string as related propduct IDs.
      */
-    private void dispatchInvalidProducts(ArrayList<String> productIds, FREContext context) {
+    private static void dispatchInvalidProducts(ArrayList<String> productIds, FREContext context) {
         JSONArray invalidProductsJson = new JSONArray();
         int i, length = productIds.size();
-        for (i = 0, length = productIds.size(); i < length; i++)
+        for (i = 0, length = productIds.size(); i < length; i++) {
             invalidProductsJson.put(productIds.get(i));
+        }
 
         context.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_INVALID, invalidProductsJson.toString());
     }

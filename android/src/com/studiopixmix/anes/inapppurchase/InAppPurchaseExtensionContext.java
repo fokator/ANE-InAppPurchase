@@ -88,8 +88,10 @@ public class InAppPurchaseExtensionContext extends FREContext {
     public void dispose() {
 
         // Unbinds the InAppBillingService if needed. This prevents memory leaks on the device.
-        if (mService != null)
+        if (mService != null) {
+
             getActivity().unbindService(mServiceConn);
+        }
     }
 
 
