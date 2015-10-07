@@ -19,57 +19,31 @@ import java.util.List;
  */
 public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
 
-    // CONSTANTS :
-    /**
-     * The list of the productIds previously bought by the user.
-     */
-    private static final String INAPP_PURCHASE_ITEM_LIST = "INAPP_PURCHASE_ITEM_LIST";
-
-    /**
-     * The response code key used when getting the products details. The differents codes are detailed below.
-     */
-    private static final String RESPONSE_CODE = "RESPONSE_CODE";
-
-    /**
-     * The continuation token used if the list was too long to fit in one request. If this property is not null in the response Bundle, a new call to
-     * <code>getPurchases</code> should be made with the continuation token as parameter..
-     */
-    private static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
-
-    /**
-     * StringArrayList containing the purchase information
-     */
-    private static final String INAPP_PURCHASE_DATA_LIST = "INAPP_PURCHASE_DATA_LIST";
-
-    /**
-     * StringArrayList containing the signatures
-     */
-    private static final String INAPP_DATA_SIGNATURE_LIST = "INAPP_DATA_SIGNATURE_LIST";
-
     @Override
-    public FREObject call(FREContext c, FREObject[] args) {
+    public FREObject call(FREContext context, FREObject[] args) {
 
-        final InAppPurchaseExtensionContext context = (InAppPurchaseExtensionContext) c;
-        final Activity activity = context.getActivity();
-        final IInAppBillingService iapService = context.getInAppBillingService();
+        InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
+        Activity activity = extensionContext.getActivity();
+        String packageName = activity.getPackageName();
+        IInAppBillingService iapService = extensionContext.getInAppBillingService();
 
         InAppPurchaseExtension.logToAS("Restoring the user's purchases ...");
 
         // Retrieves the products details.
         List<String> purchaseIds = null;
         try {
-            purchaseIds = getPurchaseIds(iapService, activity.getPackageName(), "inapp", null);
+            purchaseIds = getPurchaseIds(iapService, packageName, "inapp", null);
             InAppPurchaseExtension.logToAS("PurchaseIds value : " + purchaseIds);
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while retrieving the previous purchases : " + e.toString() + "\n at " + e.getStackTrace());
-            context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVING_FAILED, e.getMessage());
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVING_FAILED, e.getMessage());
             return null;
         }
 
         if (purchaseIds == null || purchaseIds.size() == 0) {
 
             InAppPurchaseExtension.logToAS("no purchases to restore, returning ...");
-            context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, "");
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, "");
             return null;
         }
 
@@ -80,7 +54,7 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         }
 
         InAppPurchaseExtension.logToAS("Found " + purchaseIds.size() + " purchases to restore ... returning their IDs : " + purchases);
-        context.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, purchases);
+        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, purchases);
 
         return null;
     }
@@ -95,18 +69,18 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         Bundle bundle = iapService.getPurchases(InAppPurchaseExtension.API_VERSION, packageName, type, continuationToken);
 
         // Parsing the received JSON if the response code is success.
-        int responseCode = bundle.getInt(RESPONSE_CODE);
+        int responseCode = bundle.getInt(PurchasesBundleKey.RESPONSE_CODE);
         ArrayList<String> productsIds = null;
 
         if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
-            productsIds = bundle.getStringArrayList(INAPP_PURCHASE_ITEM_LIST);
+            productsIds = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_ITEM_LIST);
 
             // TODO ...
-            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(INAPP_PURCHASE_DATA_LIST));
-            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(INAPP_DATA_SIGNATURE_LIST));
-            
+            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST));
+            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(PurchasesBundleKey.INAPP_DATA_SIGNATURE_LIST));
+
             InAppPurchaseExtension.logToAS("Native store returned " + productsIds);
-            String cToken = bundle.getString(INAPP_CONTINUATION_TOKEN);
+            String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
 
             if (continuationToken != null) {
                 InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
@@ -121,5 +95,43 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         }
 
         return productsIds;
+    }
+
+    /**
+     * Keys, response data that is returned in the Bundle.
+     * <p/>
+     * http://developer.android.com/google/play/billing/billing_reference.html#getPurchases
+     */
+    private static class PurchasesBundleKey {
+
+        /**
+         * The response code key used when getting the products details. The differents codes are detailed below.
+         * Value is 0 if the request was successful, error otherwise.
+         */
+        private static final String RESPONSE_CODE = "RESPONSE_CODE";
+
+        /**
+         * The list of the productIds previously bought by the user.
+         * StringArrayList containing the list of productIds of purchases from this app.
+         */
+        private static final String INAPP_PURCHASE_ITEM_LIST = "INAPP_PURCHASE_ITEM_LIST";
+
+        /**
+         * StringArrayList containing the details for purchases from this app.
+         * See table 4 for the list of detail information stored in each INAPP_PURCHASE_DATA item in the list.
+         */
+        private static final String INAPP_PURCHASE_DATA_LIST = "INAPP_PURCHASE_DATA_LIST";
+
+        /**
+         * StringArrayList containing the signatures
+         * StringArrayList containing the signatures of purchases from this app.
+         */
+        private static final String INAPP_DATA_SIGNATURE_LIST = "INAPP_DATA_SIGNATURE_LIST";
+
+        /**
+         * The continuation token used if the list was too long to fit in one request. If this property is not null in the response Bundle, a new call to
+         * <code>getPurchases</code> should be made with the continuation token as parameter..
+         */
+        private static final String INAPP_CONTINUATION_TOKEN = "INAPP_CONTINUATION_TOKEN";
     }
 }

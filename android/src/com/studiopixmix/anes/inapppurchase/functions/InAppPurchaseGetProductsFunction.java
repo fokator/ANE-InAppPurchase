@@ -24,19 +24,19 @@ import java.util.ArrayList;
  */
 public class InAppPurchaseGetProductsFunction implements FREFunction {
 
-    // CONSTANTS :
-    /**
-     * The key used for the products IDs bundle.
-     */
-    private static final String ITEM_ID_LIST = "ITEM_ID_LIST";
-
     /**
      * The response code key used when getting the products details. The differents codes are detailed below.
      */
     private static final String RESPONSE_CODE = "RESPONSE_CODE";
 
     /**
+     * The key used for the products IDs bundle.
+     */
+    private static final String ITEM_ID_LIST = "ITEM_ID_LIST";
+
+    /**
      * The key used for the products details, formated in an ArrayList of JSONs.
+     * http://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails
      */
     private static final String DETAILS_LIST = "DETAILS_LIST";
 
@@ -49,10 +49,11 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
 
         Activity activity = extensionContext.getActivity();
+        String packageName = activity.getPackageName();
         IInAppBillingService iapService = extensionContext.getInAppBillingService();
 
         InAppPurchaseExtension.logToAS("Executing in background ... Activity : " + activity
-                + " (activity package name : " + activity.getPackageName() + ") ; Service : " + iapService);
+                + " (activity package name : " + packageName + ") ; Service : " + iapService);
 
         // Converts the given data to a bundle of products IDs.
         Bundle products = new Bundle();
@@ -62,7 +63,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         // Retrieves the products details.
         Bundle skuDetails;
         try {
-            skuDetails = iapService.getSkuDetails(InAppPurchaseExtension.API_VERSION, activity.getPackageName(), "inapp", products);
+            skuDetails = iapService.getSkuDetails(InAppPurchaseExtension.API_VERSION, packageName, "inapp", products);
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while retrieving the products details : " + e.toString());
             return null;
@@ -81,6 +82,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         InAppPurchaseExtension.logToAS("Response code : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
         String finalJSON;
         if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
+            // TODO simplify
 
             ArrayList<String> detailsJson = skuDetails.getStringArrayList(DETAILS_LIST);
             if (detailsJson == null || detailsJson.size() == 0) {
@@ -121,6 +123,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         int i, length = detailsJson.size();
         for (i = 0; i < length; i++) {
             try {
+                // http://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails
                 JSONObject currentJsonObject = new JSONObject(detailsJson.get(i));
 
                 JSONObject currentObject = new JSONObject();

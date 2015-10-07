@@ -44,8 +44,8 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
         try {
 
             IInAppBillingService service = context.getInAppBillingService();
-            Activity act = context.getActivity();
-            String packageName = act.getPackageName();
+            Activity activity = context.getActivity();
+            String packageName = activity.getPackageName();
 
             response = service.consumePurchase(InAppPurchaseExtension.API_VERSION, packageName, purchaseToken);
 
