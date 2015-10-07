@@ -33,6 +33,7 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
     // PROPERTIES :
     /**
      * The context passed to the main method, it will be used in the activity response.
+     * TODO need this static?
      */
     private static InAppPurchaseExtensionContext mContext;
 
@@ -65,10 +66,10 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
         Bundle buyIntentBundle;
         try {
             IInAppBillingService service = mContext.getInAppBillingService();
-            Activity act = mContext.getActivity();
-            String pkgName = act.getPackageName();
+            Activity activity = mContext.getActivity();
+            String packageName = activity.getPackageName();
 
-            buyIntentBundle = service.getBuyIntent(InAppPurchaseExtension.API_VERSION, pkgName, productId, "inapp", payload);
+            buyIntentBundle = service.getBuyIntent(InAppPurchaseExtension.API_VERSION, packageName, productId, "inapp", payload);
 
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while the buy intent! " + e.toString());
