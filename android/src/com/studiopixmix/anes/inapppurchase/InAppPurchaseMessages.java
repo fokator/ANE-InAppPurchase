@@ -7,6 +7,8 @@ package com.studiopixmix.anes.inapppurchase;
  */
 public class InAppPurchaseMessages {
 
+	/** ServiceConnection connected. */
+	public static final String INITIALIZE = "EVENT_INITIALIZED";
 	/** Event used for each log that have to bubble to the AS app. */
 	public static final String LOG = "EVENT_LOG";
 	/** Event dispatched when the products have been loaded. */

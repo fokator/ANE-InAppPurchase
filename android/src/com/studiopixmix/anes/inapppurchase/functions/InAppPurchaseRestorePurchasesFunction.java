@@ -10,6 +10,7 @@ import com.android.vending.billing.IInAppBillingService;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtension;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
+import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         // Retrieves the products details.
         List<String> purchaseIds = null;
         try {
-            purchaseIds = getPurchaseIds(iapService, packageName, "inapp", null);
+            purchaseIds = getPurchasesData(iapService, packageName, "inapp", null);
             InAppPurchaseExtension.logToAS("PurchaseIds value : " + purchaseIds);
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while retrieving the previous purchases : " + e.toString() + "\n at " + e.getStackTrace());
@@ -47,6 +48,8 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
             return null;
         }
 
+        // TODO remove purchaseIds
+        // TODO send regular array to AS3
         // We have at least 1 purchase to restore.
         String purchases = purchaseIds.get(0);
         for (int i = 1; i < purchaseIds.size(); i++) {
@@ -54,12 +57,52 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         }
 
         InAppPurchaseExtension.logToAS("Found " + purchaseIds.size() + " purchases to restore ... returning their IDs : " + purchases);
-        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, purchases);
+        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, purchaseIds.toString());
 
         return null;
     }
 
+    private static List<String> getPurchasesData(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException, JSONException {
+        Bundle bundle = iapService.getPurchases(InAppPurchaseExtension.API_VERSION, packageName, type, continuationToken);
+
+        // Parsing the received JSON if the response code is success.
+        int responseCode = bundle.getInt(PurchasesBundleKey.RESPONSE_CODE);
+        ArrayList<String> purchases = null;
+        ArrayList<String> signatures = null;
+
+        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
+
+            purchases = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST);
+            signatures = bundle.getStringArrayList(PurchasesBundleKey.INAPP_DATA_SIGNATURE_LIST);
+
+            InAppPurchaseExtension.logToAS("Native store returned " + purchases);
+            String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
+
+            if (continuationToken != null) {
+                InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
+
+                // There is a continuation token, retrieving next part ... Recursive call.
+                List<String> nextData = getPurchasesData(iapService, packageName, type, cToken);
+                if (nextData != null) {
+                    purchases.addAll(nextData);
+                }
+            }
+        } else {
+            InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+        }
+
+        // merge data
+        List<String> transactions = new ArrayList<String>();
+        for (int i = 0; i < purchases.size(); i++) {
+            Transaction transaction = new Transaction(purchases.get(i), signatures.get(i));
+            transactions.add(transaction.toString());
+        }
+
+        return transactions;
+    }
+
     /**
+     * TODO remove this
      * Recursively calls <code>getPruchases</code> to retrieve all the purchased products for the user. The method uses a continuation token
      * to handle the case where the list of purchases is too large to fit in one request.
      *
@@ -75,9 +118,9 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
             productsIds = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_ITEM_LIST);
 
-            // TODO ...
-            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST));
-            InAppPurchaseExtension.logToAS(" --- " + bundle.getStringArrayList(PurchasesBundleKey.INAPP_DATA_SIGNATURE_LIST));
+            // purchases
+            ArrayList<String> purchasesData = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST);
+            //transaction = new Transaction(purchaseData, dataSignature);
 
             InAppPurchaseExtension.logToAS("Native store returned " + productsIds);
             String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
@@ -85,10 +128,11 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
             if (continuationToken != null) {
                 InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
 
-                // There is a continuation token, retrieving next part ...
+                // There is a continuation token, retrieving next part ... Recursive call.
                 List<String> ids = getPurchaseIds(iapService, packageName, type, cToken);
-                if (ids != null)
+                if (ids != null) {
                     productsIds.addAll(ids);
+                }
             }
         } else {
             InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));

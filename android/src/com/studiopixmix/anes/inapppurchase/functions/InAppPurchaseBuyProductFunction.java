@@ -147,22 +147,17 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
                             return;
                         }
 
-                        JSONObject jsonObject = new JSONObject();
+                        Transaction transaction;
                         try {
-                            jsonObject.put("productId", item.getString("productId"));
-                            jsonObject.put("transactionTimestamp", item.getInt("purchaseTime"));
-                            jsonObject.put("developerPayload", item.get("developerPayload"));
-                            jsonObject.put("purchaseToken", item.get("purchaseToken"));
-                            jsonObject.put("orderId", item.get("orderId"));
-                            jsonObject.put("signature", dataSignature);
-                            jsonObject.put("playStoreResponse", purchaseData);
+                            transaction = new Transaction(purchaseData, dataSignature);
+
                         } catch (Exception e) {
                             mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, "Error while creating the returned JSONObject!");
                             return;
                         }
 
                         InAppPurchaseExtension.logToAS("The product has been successfully bought! returning it with the event ...");
-                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_SUCCESS, jsonObject.toString());
+                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_SUCCESS, transaction.toString());
 
                         break;
                     case ResponseCodes.BILLING_RESPONSE_RESULT_USER_CANCELED:

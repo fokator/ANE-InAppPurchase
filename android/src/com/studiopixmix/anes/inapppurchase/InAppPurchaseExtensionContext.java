@@ -40,7 +40,7 @@ public class InAppPurchaseExtensionContext extends FREContext {
     private void connectToService() {
 
         InAppPurchaseExtension.logToAS("Connecting to the service ...");
-
+        
         mServiceConn = new ServiceConnection() {
             @Override
             public void onServiceDisconnected(ComponentName name) {
@@ -54,8 +54,7 @@ public class InAppPurchaseExtensionContext extends FREContext {
                 mService = IInAppBillingService.Stub.asInterface(service);
                 InAppPurchaseExtension.logToAS("Service connected.");
 
-                // TODO dispatch event
-                // processTasksQueue();
+                dispatchStatusEventAsync(InAppPurchaseMessages.INITIALIZE, "done");
             }
         };
     }
