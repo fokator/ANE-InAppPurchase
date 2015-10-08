@@ -22,7 +22,17 @@ package com.studiopixmix.anes.InAppPurchase {
      */
     public class InAppPurchaseANE extends EventDispatcher {
 
+        /**
+         * Whether the ANE is supported on the current device or not.
+         * This ANE only works on iOS and Android.
+         */
+        public static function isSupported():Boolean
+        {
+            return Capabilities.manufacturer.indexOf('iOS') > -1 || Capabilities.manufacturer.indexOf('Android') > -1;
+        }
+
         // CONSTANTS
+        public static const VERSION:String = "0.0.0";
         private static const EXTENSION_ID:String = "com.studiopixmix.anes.inapppurchase";
 
         private static const NATIVE_METHOD_GET_PRODUCTS:String = "getProducts";
@@ -32,8 +42,7 @@ package com.studiopixmix.anes.InAppPurchase {
         private static const NATIVE_METHOD_RESTORE_PURCHASES:String = "restorePurchase";
 
         // PROPERTIES
-        private var extContext:ExtensionContext;
-
+        private var _extContext:ExtensionContext;
 
         // CONSTRUCTOR
         /**
@@ -41,12 +50,12 @@ package com.studiopixmix.anes.InAppPurchase {
          */
         public function InAppPurchaseANE()
         {
-            extContext = ExtensionContext.createExtensionContext(EXTENSION_ID, "");
+            _extContext = ExtensionContext.createExtensionContext(EXTENSION_ID, null);
+            if (_extContext != null) {
 
-            if (extContext != null)
-                extContext.addEventListener(StatusEvent.STATUS, onStatusEvent);
+                _extContext.addEventListener(StatusEvent.STATUS, onStatusEvent);
+            }
         }
-
 
         ////////////////
         // PUBLIC API //
@@ -60,7 +69,7 @@ package com.studiopixmix.anes.InAppPurchase {
             if (!isSupported())
                 return;
 
-            extContext.call(NATIVE_METHOD_INITIALIZE);
+            _extContext.call(NATIVE_METHOD_INITIALIZE);
         }
 
         /**
@@ -76,7 +85,7 @@ package com.studiopixmix.anes.InAppPurchase {
                 return;
             }
 
-            extContext.call(NATIVE_METHOD_GET_PRODUCTS, productsIds);
+            _extContext.call(NATIVE_METHOD_GET_PRODUCTS, productsIds);
         }
 
         /**
@@ -90,10 +99,11 @@ package com.studiopixmix.anes.InAppPurchase {
             if (!isSupported())
                 return;
 
-            extContext.call(NATIVE_METHOD_BUY_PRODUCT, productId, devPayload);
+            _extContext.call(NATIVE_METHOD_BUY_PRODUCT, productId, devPayload);
         }
 
         /**
+         * TODO IOS support
          * Android only. Consumes the purchase associated to the given purchase token, and dispatches CONSUME_SUCCESS event, or CONSUME_FAILURE following the returned value.
          * This method should be used for products that can be bought several times. On Android, once this kind of items is bought, it must
          * be consumed to be purchased again. You can either call this method by yourself or set the <code>autoConsume</code> parameter of
@@ -110,7 +120,7 @@ package com.studiopixmix.anes.InAppPurchase {
                 return;
             }
 
-            extContext.call(NATIVE_METHOD_CONSUME_PRODUCT, purchaseToken);
+            _extContext.call(NATIVE_METHOD_CONSUME_PRODUCT, purchaseToken);
         }
 
 
@@ -124,22 +134,13 @@ package com.studiopixmix.anes.InAppPurchase {
             if (!isSupported())
                 return;
 
-            extContext.call(NATIVE_METHOD_RESTORE_PURCHASES);
+            _extContext.call(NATIVE_METHOD_RESTORE_PURCHASES);
         }
 
 
         /////////////////
         // PRIVATE API //
         /////////////////
-
-        /**
-         * Whether the ANE is supported on the current device or not.
-         * This ANE only works on iOS and Android.
-         */
-        private function isSupported():Boolean
-        {
-            return Capabilities.manufacturer.indexOf('iOS') > -1 || Capabilities.manufacturer.indexOf('Android') > -1;
-        }
 
         /**
          * Called on each Status Event from the native code.
@@ -154,28 +155,47 @@ package com.studiopixmix.anes.InAppPurchase {
                     eventToDispatch = new InAppPurchaseANEEvent(InAppPurchaseANEEvent.INITIALIZED);
 
                     break;
+                case InAppPurchaseANEEvent.LOG:
+                    eventToDispatch = LogEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.PRODUCTS_LOADED:
+                    eventToDispatch = ProductsLoadedEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.PRODUCTS_INVALID:
+                    eventToDispatch = ProductsInvalidEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.PURCHASE_SUCCESS:
+                    eventToDispatch = PurchaseSuccessEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.PURCHASE_CANCELED:
+                    eventToDispatch = PurchaseCanceledEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.PURCHASE_FAILURE:
+                    eventToDispatch = PurchaseFailureEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.CONSUME_SUCCESS:
+                    eventToDispatch = PurchaseConsumeSuccessEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.CONSUME_FAILED:
+                    eventToDispatch = PurchaseConsumeFailureEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.PURCHASES_RETRIEVED:
+                    eventToDispatch = PurchasesRetrievedEvent.FromStatusEvent(event);
+
+                    break;
+                case InAppPurchaseANEEvent.PURCHASES_RETRIEVING_FAILED:
+                    eventToDispatch = PurchasesRetrievingFailed.FromStatusEvent(event);
+
+                    break;
                 default :
-                    // TODO move to switch
-                    if (event.code == InAppPurchaseANEEvent.LOG)
-                        eventToDispatch = LogEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.PRODUCTS_LOADED)
-                        eventToDispatch = ProductsLoadedEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.PRODUCTS_INVALID)
-                        eventToDispatch = ProductsInvalidEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.PURCHASE_SUCCESS)
-                        eventToDispatch = PurchaseSuccessEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.PURCHASE_CANCELED)
-                        eventToDispatch = PurchaseCanceledEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.PURCHASE_FAILURE)
-                        eventToDispatch = PurchaseFailureEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.CONSUME_SUCCESS)
-                        eventToDispatch = PurchaseConsumeSuccessEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.CONSUME_FAILED)
-                        eventToDispatch = PurchaseConsumeFailureEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.PURCHASES_RETRIEVED)
-                        eventToDispatch = PurchasesRetrievedEvent.FromStatusEvent(event);
-                    else if (event.code == InAppPurchaseANEEvent.PURCHASES_RETRIEVING_FAILED)
-                        eventToDispatch = PurchasesRetrievingFailed.FromStatusEvent(event);
             }
 
             if (eventToDispatch != null) {

@@ -100,45 +100,6 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         return transactions;
     }
 
-//    /**
-//     * Recursively calls <code>getPruchases</code> to retrieve all the purchased products for the user. The method uses a continuation token
-//     * to handle the case where the list of purchases is too large to fit in one request.
-//     *
-//     * @throws RemoteException
-//     */
-//    private static List<String> getPurchaseIds(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException {
-//        Bundle bundle = iapService.getPurchases(InAppPurchaseExtension.API_VERSION, packageName, type, continuationToken);
-//
-//        // Parsing the received JSON if the response code is success.
-//        int responseCode = bundle.getInt(PurchasesBundleKey.RESPONSE_CODE);
-//        ArrayList<String> productsIds = null;
-//
-//        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
-//            productsIds = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_ITEM_LIST);
-//
-//            // purchases
-//            ArrayList<String> purchasesData = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST);
-//            //transaction = new Transaction(purchaseData, dataSignature);
-//
-//            InAppPurchaseExtension.logToAS("Native store returned " + productsIds);
-//            String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
-//
-//            if (continuationToken != null) {
-//                InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
-//
-//                // There is a continuation token, retrieving next part ... Recursive call.
-//                List<String> ids = getPurchaseIds(iapService, packageName, type, cToken);
-//                if (ids != null) {
-//                    productsIds.addAll(ids);
-//                }
-//            }
-//        } else {
-//            InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
-//        }
-//
-//        return productsIds;
-//    }
-
     /**
      * Keys, response data that is returned in the Bundle.
      * <p/>

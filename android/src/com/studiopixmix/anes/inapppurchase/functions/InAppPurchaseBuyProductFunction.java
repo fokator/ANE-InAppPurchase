@@ -110,7 +110,7 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
     /**
      * The response of the pending intent.
      */
-    public static void onIntentFinished(Activity sourceActivity, int requestCode, int resultCode, Intent data, String devPayload) {
+    public static void onIntentFinished(Activity sourceActivity, int requestCode, int resultCode, Intent buyIntent, String devPayload) {
 
         InAppPurchaseExtension.logToAS("Intent finished");
 
@@ -123,10 +123,10 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
                 InAppPurchaseExtension.logToAS("Purchase has been cancelled!");
                 mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_CANCELED, "");
             } else {
-
-                int responseCode = data.getIntExtra("RESPONSE_CODE", 0);
-                String purchaseData = data.getStringExtra("INAPP_PURCHASE_DATA");
-                String dataSignature = data.getStringExtra("INAPP_DATA_SIGNATURE");
+                // http://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent
+                int responseCode = buyIntent.getIntExtra("RESPONSE_CODE", 0);
+                String purchaseData = buyIntent.getStringExtra("INAPP_PURCHASE_DATA");
+                String dataSignature = buyIntent.getStringExtra("INAPP_DATA_SIGNATURE");
 
                 switch (responseCode) {
                     case ResponseCodes.BILLING_RESPONSE_RESULT_OK:

@@ -26,12 +26,10 @@ public class InAppPurchaseExtensionContext extends FREContext {
 
         connectToService();
     }
-
-
+    
     //////////////////////
     // SPECIFIC METHODS //
     //////////////////////
-
 
     /**
      * Starts a new ServiceConnection and sets the <code>mService</code> property on connection success. If the connection is lost,
@@ -40,7 +38,7 @@ public class InAppPurchaseExtensionContext extends FREContext {
     private void connectToService() {
 
         InAppPurchaseExtension.logToAS("Connecting to the service ...");
-        
+
         mServiceConn = new ServiceConnection() {
             @Override
             public void onServiceDisconnected(ComponentName name) {
