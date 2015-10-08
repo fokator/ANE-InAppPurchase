@@ -1,35 +1,34 @@
-package com.studiopixmix.anes.InAppPurchase.event
-{
-	import com.studiopixmix.anes.InAppPurchase.SuccessfullPurchase;
-	
-	import flash.events.StatusEvent;
+package com.studiopixmix.anes.InAppPurchase.event {
+    import com.studiopixmix.anes.InAppPurchase.Purchase;
 
-	/**
-	 * Event dispatched when a purchase is successful.
-	 */
-	public class PurchaseSuccessEvent extends InAppPurchaseANEEvent {
-		// PROPERTIES
-		public var purchase:SuccessfullPurchase;
-		
-		// CONSTRUCTOR
-		public function PurchaseSuccessEvent(purchase:SuccessfullPurchase) {
-			super(InAppPurchaseANEEvent.PURCHASE_SUCCESS);
-			
-			this.purchase = purchase;
-		}
-		
-		/**
-		 * Builds a PurchaseSuccessEvent from the given status event.
-		 * The purchase JSON data is stored in the "level" property of the status event.
-		 */
-		public static function FromStatusEvent(statusEvent:StatusEvent):PurchaseSuccessEvent {
-			try {
-				const purchase:SuccessfullPurchase = SuccessfullPurchase.FromJSONPurchase(JSON.parse(statusEvent.level));
-				return new PurchaseSuccessEvent(purchase);
-			} catch(e:Error) {
-			}
+    import flash.events.StatusEvent;
 
-			return new PurchaseSuccessEvent(new SuccessfullPurchase());
-		}
-	}
+    /**
+     * Event dispatched when a purchase is successful.
+     */
+    public class PurchaseSuccessEvent extends InAppPurchaseANEEvent {
+        public var purchase:Purchase;
+
+        public function PurchaseSuccessEvent(purchase:Purchase)
+        {
+            super(InAppPurchaseANEEvent.PURCHASE_SUCCESS);
+
+            this.purchase = purchase;
+        }
+
+        /**
+         * Builds a PurchaseSuccessEvent from the given status event.
+         * The purchase JSON data is stored in the "level" property of the status event.
+         */
+        public static function FromStatusEvent(statusEvent:StatusEvent):PurchaseSuccessEvent
+        {
+            try {
+                const purchase:Purchase = Purchase.FromJSONPurchase(JSON.parse(statusEvent.level));
+                return new PurchaseSuccessEvent(purchase);
+            } catch (e:Error) {
+            }
+
+            return new PurchaseSuccessEvent(new Purchase());
+        }
+    }
 }

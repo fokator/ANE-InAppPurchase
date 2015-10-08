@@ -147,9 +147,9 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
                             return;
                         }
 
-                        Transaction transaction;
+                        Purchase purchase;
                         try {
-                            transaction = new Transaction(purchaseData, dataSignature);
+                            purchase = new Purchase(purchaseData, dataSignature);
 
                         } catch (Exception e) {
                             mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, "Error while creating the returned JSONObject!");
@@ -157,7 +157,7 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
                         }
 
                         InAppPurchaseExtension.logToAS("The product has been successfully bought! returning it with the event ...");
-                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_SUCCESS, transaction.toString());
+                        mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_SUCCESS, purchase.toString());
 
                         break;
                     case ResponseCodes.BILLING_RESPONSE_RESULT_USER_CANCELED:

@@ -10,6 +10,7 @@ import com.android.vending.billing.IInAppBillingService;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtension;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
+import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
@@ -31,33 +32,31 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         InAppPurchaseExtension.logToAS("Restoring the user's purchases ...");
 
         // Retrieves the products details.
-        List<String> purchaseIds = null;
+        List<String> purchasesList = null;
         try {
-            purchaseIds = getPurchasesData(iapService, packageName, "inapp", null);
-            InAppPurchaseExtension.logToAS("PurchaseIds value : " + purchaseIds);
+            purchasesList = getPurchasesData(iapService, packageName, "inapp", null);
+            InAppPurchaseExtension.logToAS("PurchasesList value : " + purchasesList);
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while retrieving the previous purchases : " + e.toString() + "\n at " + e.getStackTrace());
             extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVING_FAILED, e.getMessage());
             return null;
         }
 
-        if (purchaseIds == null || purchaseIds.size() == 0) {
+        if (purchasesList == null || purchasesList.size() == 0) {
 
             InAppPurchaseExtension.logToAS("no purchases to restore, returning ...");
             extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, "");
             return null;
         }
 
-        // TODO remove purchaseIds
-        // TODO send regular array to AS3
-        // We have at least 1 purchase to restore.
-        String purchases = purchaseIds.get(0);
-        for (int i = 1; i < purchaseIds.size(); i++) {
-            purchases += "," + purchaseIds.get(i);
+        JSONArray purchasesToDispatch = new JSONArray();
+        for (int i = 0; i < purchasesList.size(); i++) {
+            purchasesToDispatch.put(purchasesList.get(i));
         }
 
-        InAppPurchaseExtension.logToAS("Found " + purchaseIds.size() + " purchases to restore ... returning their IDs : " + purchases);
-        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, purchaseIds.toString());
+        InAppPurchaseExtension.logToAS("Found " + purchasesList.size() + " purchases to restore ... returning:");
+        InAppPurchaseExtension.logToAS("\t" + purchasesToDispatch);
+        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVED, purchasesToDispatch.toString());
 
         return null;
     }
@@ -94,52 +93,51 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
         // merge data
         List<String> transactions = new ArrayList<String>();
         for (int i = 0; i < purchases.size(); i++) {
-            Transaction transaction = new Transaction(purchases.get(i), signatures.get(i));
+            Purchase transaction = new Purchase(purchases.get(i), signatures.get(i));
             transactions.add(transaction.toString());
         }
 
         return transactions;
     }
 
-    /**
-     * TODO remove this
-     * Recursively calls <code>getPruchases</code> to retrieve all the purchased products for the user. The method uses a continuation token
-     * to handle the case where the list of purchases is too large to fit in one request.
-     *
-     * @throws RemoteException
-     */
-    private static List<String> getPurchaseIds(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException {
-        Bundle bundle = iapService.getPurchases(InAppPurchaseExtension.API_VERSION, packageName, type, continuationToken);
-
-        // Parsing the received JSON if the response code is success.
-        int responseCode = bundle.getInt(PurchasesBundleKey.RESPONSE_CODE);
-        ArrayList<String> productsIds = null;
-
-        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
-            productsIds = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_ITEM_LIST);
-
-            // purchases
-            ArrayList<String> purchasesData = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST);
-            //transaction = new Transaction(purchaseData, dataSignature);
-
-            InAppPurchaseExtension.logToAS("Native store returned " + productsIds);
-            String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
-
-            if (continuationToken != null) {
-                InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
-
-                // There is a continuation token, retrieving next part ... Recursive call.
-                List<String> ids = getPurchaseIds(iapService, packageName, type, cToken);
-                if (ids != null) {
-                    productsIds.addAll(ids);
-                }
-            }
-        } else {
-            InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
-        }
-
-        return productsIds;
-    }
+//    /**
+//     * Recursively calls <code>getPruchases</code> to retrieve all the purchased products for the user. The method uses a continuation token
+//     * to handle the case where the list of purchases is too large to fit in one request.
+//     *
+//     * @throws RemoteException
+//     */
+//    private static List<String> getPurchaseIds(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException {
+//        Bundle bundle = iapService.getPurchases(InAppPurchaseExtension.API_VERSION, packageName, type, continuationToken);
+//
+//        // Parsing the received JSON if the response code is success.
+//        int responseCode = bundle.getInt(PurchasesBundleKey.RESPONSE_CODE);
+//        ArrayList<String> productsIds = null;
+//
+//        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
+//            productsIds = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_ITEM_LIST);
+//
+//            // purchases
+//            ArrayList<String> purchasesData = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST);
+//            //transaction = new Transaction(purchaseData, dataSignature);
+//
+//            InAppPurchaseExtension.logToAS("Native store returned " + productsIds);
+//            String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
+//
+//            if (continuationToken != null) {
+//                InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
+//
+//                // There is a continuation token, retrieving next part ... Recursive call.
+//                List<String> ids = getPurchaseIds(iapService, packageName, type, cToken);
+//                if (ids != null) {
+//                    productsIds.addAll(ids);
+//                }
+//            }
+//        } else {
+//            InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+//        }
+//
+//        return productsIds;
+//    }
 
     /**
      * Keys, response data that is returned in the Bundle.

@@ -1,38 +1,41 @@
-package com.studiopixmix.anes.InAppPurchase.event
-{
-	import flash.events.StatusEvent;
+package com.studiopixmix.anes.InAppPurchase.event {
+    import com.studiopixmix.anes.InAppPurchase.Purchase;
 
-	/**
-	 * Event dispatched when the the request to the store to retrieve the user's previous purchases succeeded. 
-	 * This event contains a collection of product IDs 
-	 */
-	public class PurchasesRetrievedEvent extends InAppPurchaseANEEvent {
-		
-		// PROPERTIES :
-		/** The collection of all the product IDs of the previous purchases of the user. */
-		public var purchases:Vector.<String>;
-		
-		// CONSTRUCTOR :
-		public function PurchasesRetrievedEvent(purchases:Vector.<String>) {
-			super(InAppPurchaseANEEvent.PURCHASES_RETRIEVED);
-			this.purchases = purchases;
-		}
-		
-		
-		/**
-		 * Builds a PurchasesRetrievedEvent from the given StatusEvent.
-		 * The previous purchases are stored as a list of ids separated by "," in the "level" property of the event.
-		 */
-		public static function FromStatusEvent(statusEvent:StatusEvent):PurchasesRetrievedEvent {
-			try {
-				const productIdsAsString:String = statusEvent.level as String;
-				const purchases:Vector.<String> = productIdsAsString != null ? Vector.<String>(productIdsAsString.split(",")) : null;
-				
-				return new PurchasesRetrievedEvent(purchases);
-			} catch (e:Error) {
-			}
-			
-			return new PurchasesRetrievedEvent(new <String>[]);
-		}
-	}
+    import flash.events.StatusEvent;
+
+    /**
+     * Event dispatched when the the request to the store to retrieve the user's previous purchases succeeded.
+     * This event contains a collection of product IDs
+     */
+    public class PurchasesRetrievedEvent extends InAppPurchaseANEEvent {
+
+        /** The collection of all the product IDs of the previous purchases of the user. */
+        public var purchases:Vector.<Purchase>;
+
+        public function PurchasesRetrievedEvent(purchases:Vector.<Purchase>)
+        {
+            super(InAppPurchaseANEEvent.PURCHASES_RETRIEVED);
+            this.purchases = purchases;
+        }
+
+        /**
+         * Builds a PurchasesRetrievedEvent from the given StatusEvent.
+         */
+        public static function FromStatusEvent(statusEvent:StatusEvent):PurchasesRetrievedEvent
+        {
+            try {
+                const purchases:Vector.<Purchase> = new <Purchase>[];
+                const dataArray:Object = JSON.parse(statusEvent.level);
+                for (var i:int = 0; i < dataArray.length; i++) {
+                    const purchase:Purchase = Purchase.FromJSONPurchase(JSON.parse(dataArray[i]));
+                    purchases.push(purchase);
+                }
+
+                return new PurchasesRetrievedEvent(purchases);
+            } catch (e:Error) {
+            }
+
+            return new PurchasesRetrievedEvent(new <Purchase>[]);
+        }
+    }
 }

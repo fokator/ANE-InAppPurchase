@@ -6,9 +6,9 @@ import org.json.JSONObject;
 /**
  * Created by rjuhasz on 7. 10. 2015.
  */
-public class Transaction extends JSONObject {
+public class Purchase extends JSONObject {
 
-    public Transaction(String purchaseData, String dataSignature) throws JSONException {
+    public Purchase(String purchaseData, String dataSignature) throws JSONException {
 
         JSONObject item = new JSONObject(purchaseData);
 
@@ -19,6 +19,5 @@ public class Transaction extends JSONObject {
         put("orderId", item.get("orderId"));
         put("signature", dataSignature);
         put("playStoreResponse", purchaseData);
-
     }
 }
