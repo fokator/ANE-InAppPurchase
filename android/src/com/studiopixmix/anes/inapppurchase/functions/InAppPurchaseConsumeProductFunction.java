@@ -36,15 +36,15 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
      * Consumes the product related to the given purchase token.
      *
      * @param purchaseToken
-     * @param context
+     * @param extensionContext
      */
-    public static void consumeProduct(String purchaseToken, InAppPurchaseExtensionContext context) {
+    private static void consumeProduct(String purchaseToken, InAppPurchaseExtensionContext extensionContext) {
 
         int response = -1;
         try {
 
-            IInAppBillingService service = context.getInAppBillingService();
-            Activity activity = context.getActivity();
+            IInAppBillingService service = extensionContext.getInAppBillingService();
+            Activity activity = extensionContext.getActivity();
             String packageName = activity.getPackageName();
 
             response = service.consumePurchase(InAppPurchaseExtension.API_VERSION, packageName, purchaseToken);
@@ -52,7 +52,7 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
         } catch (Exception e) {
 
             InAppPurchaseExtension.logToAS("The consume product has failed!");
-            context.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed!");
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed!");
             return;
         }
 
@@ -61,18 +61,18 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
             try {
 
                 InAppPurchaseExtension.logToAS("The product has been successfully consumed! returning it with the event ...");
-                context.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_SUCCESS, purchaseToken);
+                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_SUCCESS, purchaseToken);
 
             } catch (Exception e) {
 
                 InAppPurchaseExtension.logToAS("The consume product has failed!");
-                context.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed!");
+                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed!");
 
             }
         } else {
 
             InAppPurchaseExtension.logToAS("The consume product has failed! response:" + response);
-            context.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed! response:" + response);
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed! response:" + response);
         }
     }
 
