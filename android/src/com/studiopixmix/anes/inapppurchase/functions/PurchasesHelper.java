@@ -14,42 +14,40 @@ import java.util.List;
  */
 public class PurchasesHelper {
 
-    public static List<String> getPurchasesData(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException, JSONException {
+    public static List<Purchase> getPurchasesData(IInAppBillingService iapService, String packageName, String type, String continuationToken) throws RemoteException, JSONException {
         Bundle bundle = iapService.getPurchases(InAppPurchaseExtension.API_VERSION, packageName, type, continuationToken);
+        List<Purchase> result = new ArrayList<Purchase>();
 
-        // Parsing the received JSON if the response code is success.
         int responseCode = bundle.getInt(PurchasesBundleKey.RESPONSE_CODE);
-        ArrayList<String> purchases = null;
-        ArrayList<String> signatures = null;
+        switch (responseCode) {
+            case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
+                ArrayList<String> purchases = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST);
+                ArrayList<String> signatures = bundle.getStringArrayList(PurchasesBundleKey.INAPP_DATA_SIGNATURE_LIST);
 
-        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
-
-            purchases = bundle.getStringArrayList(PurchasesBundleKey.INAPP_PURCHASE_DATA_LIST);
-            signatures = bundle.getStringArrayList(PurchasesBundleKey.INAPP_DATA_SIGNATURE_LIST);
-
-            InAppPurchaseExtension.logToAS("Native store returned " + purchases);
-            String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
-
-            if (continuationToken != null) {
-                InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
-
-                // There is a continuation token, retrieving next part ... Recursive call.
-                List<String> nextData = getPurchasesData(iapService, packageName, type, cToken);
-                if (nextData != null) {
-                    purchases.addAll(nextData);
+                for (int i = 0; i < purchases.size(); i++) {
+                    Purchase transaction = new Purchase(purchases.get(i), signatures.get(i));
+                    result.add(transaction);
                 }
-            }
-        } else {
-            InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+
+                InAppPurchaseExtension.logToAS("Native store returned " + purchases);
+                String cToken = bundle.getString(PurchasesBundleKey.INAPP_CONTINUATION_TOKEN);
+                if (cToken != null) {
+                    InAppPurchaseExtension.logToAS("There is a continuation token, fetching the next purchases ...");
+
+                    // There is a continuation token, retrieving next part ... Recursive call.
+                    List<Purchase> nextData = getPurchasesData(iapService, packageName, type, cToken);
+                    if (nextData != null) {
+
+                        result.addAll(nextData);
+                    }
+                }
+
+                break;
+            default:
+                InAppPurchaseExtension.logToAS("Error while loading the products: " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+
         }
 
-        // merge data
-        List<String> transactions = new ArrayList<String>();
-        for (int i = 0; i < purchases.size(); i++) {
-            Purchase transaction = new Purchase(purchases.get(i), signatures.get(i));
-            transactions.add(transaction.toString());
-        }
-
-        return transactions;
+        return result;
     }
 }

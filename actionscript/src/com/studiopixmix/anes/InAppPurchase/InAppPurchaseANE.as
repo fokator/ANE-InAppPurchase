@@ -103,26 +103,15 @@ package com.studiopixmix.anes.InAppPurchase {
         }
 
         /**
-         * TODO IOS support
-         * Android only. Consumes the purchase associated to the given purchase token, and dispatches CONSUME_SUCCESS event, or CONSUME_FAILURE following the returned value.
-         * This method should be used for products that can be bought several times. On Android, once this kind of items is bought, it must
-         * be consumed to be purchased again. You can either call this method by yourself or set the <code>autoConsume</code> parameter of
-         * <code>buyProduct</code> to true.
+         * Consume purchase by productId.
          */
-        public function consumePurchase(purchaseToken:String):void
+        public function consumePurchase(productId:String):void
         {
             if (!isSupported())
                 return;
 
-            // We only consume products on Android. Dispatching a success event if the device is ios.
-            if (Capabilities.manufacturer.toLowerCase().indexOf("ios") > -1) {
-                dispatchEvent(new PurchaseConsumeSuccessEvent(purchaseToken));
-                return;
-            }
-
-            _extContext.call(NATIVE_METHOD_CONSUME_PRODUCT, purchaseToken);
+            _extContext.call(NATIVE_METHOD_CONSUME_PRODUCT, productId);
         }
-
 
         /**
          * Requests the native store to get the user's previous purchases. This will return a list of product IDs previously purchased
@@ -136,8 +125,7 @@ package com.studiopixmix.anes.InAppPurchase {
 
             _extContext.call(NATIVE_METHOD_RESTORE_PURCHASES);
         }
-
-
+        
         /////////////////
         // PRIVATE API //
         /////////////////

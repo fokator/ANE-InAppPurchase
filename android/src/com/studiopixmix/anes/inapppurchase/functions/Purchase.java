@@ -20,4 +20,23 @@ public class Purchase extends JSONObject {
         put("signature", dataSignature);
         put("playStoreResponse", purchaseData);
     }
+
+    public String getProductId() {
+        try {
+            return (String) get("productId");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public String getPurchaseToken() {
+        try {
+            return (String) get("purchaseToken");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }

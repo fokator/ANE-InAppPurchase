@@ -9,45 +9,73 @@ import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtension;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
 
-/**
- * A function that consumes the given purchase token. On Android, consuming a purchase allows the user to purchase it again
- * (for example if your product is a pack of 5 lives for a game, the user should be allowed to buy it several times).
- */
+import java.util.List;
+
 public class InAppPurchaseConsumeProductFunction implements FREFunction {
 
     @Override
     public FREObject call(FREContext context, FREObject[] args) {
         InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
-        String purchaseToken = null;
 
+        String productId = null;
         try {
-            purchaseToken = args[0].getAsString();
+            productId = args[0].getAsString();
         } catch (Exception e) {
-            InAppPurchaseExtension.logToAS("The consume product has failed : Could not retrieve the purchase token!");
-            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed : Could not retrieve the purchase token!");
+            InAppPurchaseExtension.logToAS("The consume product has failed : Could not retrieve the purchase productId!");
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed : Could not retrieve the purchase productId!");
+            return null;
         }
 
-        consumeProduct(purchaseToken, extensionContext);
+        Purchase currentPurchase = null;
+        try {
+            Activity activity = extensionContext.getActivity();
+            String packageName = activity.getPackageName();
+            IInAppBillingService iapService = extensionContext.getInAppBillingService();
+
+            List<Purchase> purchases = PurchasesHelper.getPurchasesData(iapService, packageName, "inapp", null);
+            for (int i = 0; i < purchases.size(); i++) {
+                Purchase purchase = purchases.get(i);
+                if (productId.equals(purchase.getProductId())) {
+                    currentPurchase = purchase;
+                    break;
+                }
+            }
+
+        } catch (Exception e) {
+            String message = "Purchase for productId:" + productId + " has failed Exception:" + InAppPurchaseExtension.getStackString(e);
+
+            InAppPurchaseExtension.logToAS(message);
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, message);
+        }
+
+        if (currentPurchase == null) {
+
+            InAppPurchaseExtension.logToAS("The consume product has failed : Could not retrieve the transaction for productId:" + productId);
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed : Could not retrieve the transaction for productId:" + productId);
+            return null;
+        }
+
+        consumeProduct(currentPurchase, extensionContext);
 
         return null;
     }
 
     /**
-     * Consumes the product related to the given purchase token.
+     * Consumes the product related to the given purchase.
      *
-     * @param purchaseToken
+     * @param purchase
      * @param extensionContext
      */
-    private static void consumeProduct(String purchaseToken, InAppPurchaseExtensionContext extensionContext) {
+    private static void consumeProduct(Purchase purchase, InAppPurchaseExtensionContext extensionContext) {
 
-        int response = -1;
+        int responseCode = -1;
         try {
 
             IInAppBillingService service = extensionContext.getInAppBillingService();
             Activity activity = extensionContext.getActivity();
             String packageName = activity.getPackageName();
 
-            response = service.consumePurchase(InAppPurchaseExtension.API_VERSION, packageName, purchaseToken);
+            responseCode = service.consumePurchase(InAppPurchaseExtension.API_VERSION, packageName, purchase.getPurchaseToken());
 
         } catch (Exception e) {
 
@@ -56,23 +84,18 @@ public class InAppPurchaseConsumeProductFunction implements FREFunction {
             return;
         }
 
-        if (response == 0) { // 0 if consumption succeeded. Appropriate error values for failures.
-
-            try {
-
+        switch (responseCode) {
+            case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
                 InAppPurchaseExtension.logToAS("The product has been successfully consumed! returning it with the event ...");
-                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_SUCCESS, purchaseToken);
+                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_SUCCESS, purchase.toString());
 
-            } catch (Exception e) {
+                break;
+            default:
+                String message = ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode);
 
-                InAppPurchaseExtension.logToAS("The consume product has failed!");
-                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed!");
+                InAppPurchaseExtension.logToAS("The consume product has failed! response:" + responseCode + ". " + message);
+                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed! response:" + responseCode + ". " + message);
 
-            }
-        } else {
-
-            InAppPurchaseExtension.logToAS("The consume product has failed! response:" + response);
-            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.CONSUME_FAILED, "The consume product has failed! response:" + response);
         }
     }
 

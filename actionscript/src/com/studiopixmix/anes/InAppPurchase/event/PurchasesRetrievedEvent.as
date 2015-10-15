@@ -9,16 +9,27 @@ package com.studiopixmix.anes.InAppPurchase.event {
      */
     public class PurchasesRetrievedEvent extends InAppPurchaseANEEvent {
 
-        /** The collection of all the product IDs of the previous purchases of the user. */
-        public var purchases:Vector.<Purchase>;
+        private var _purchases:Vector.<Purchase>;
 
+        /**
+         * TODO create private constructor
+         *
+         * @param purchases
+         */
         public function PurchasesRetrievedEvent(purchases:Vector.<Purchase>)
         {
             super(InAppPurchaseANEEvent.PURCHASES_RETRIEVED);
-            this.purchases = purchases;
+
+            _purchases = purchases;
+        }
+
+        public function get purchases():Vector.<Purchase>
+        {
+            return _purchases;
         }
 
         /**
+         * TODO factory method
          * Builds a PurchasesRetrievedEvent from the given StatusEvent.
          */
         public static function FromStatusEvent(statusEvent:StatusEvent):PurchasesRetrievedEvent
@@ -27,12 +38,13 @@ package com.studiopixmix.anes.InAppPurchase.event {
                 const purchases:Vector.<Purchase> = new <Purchase>[];
                 const dataArray:Object = JSON.parse(statusEvent.level);
                 for (var i:int = 0; i < dataArray.length; i++) {
-                    const purchase:Purchase = Purchase.FromJSONPurchase(JSON.parse(dataArray[i]));
+                    const purchase:Purchase = Purchase.FromJSONPurchase(dataArray[i]);
                     purchases.push(purchase);
                 }
 
                 return new PurchasesRetrievedEvent(purchases);
             } catch (e:Error) {
+                // TODO error
             }
 
             return new PurchasesRetrievedEvent(new <Purchase>[]);
