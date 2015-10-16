@@ -25,8 +25,11 @@ TransactionObserver *transactionObserver;
 DEFINE_ANE_FUNCTION(initialize) {
     transactionObserver.context = context;
     [[SKPaymentQueue defaultQueue] addTransactionObserver:transactionObserver];
-    
+
     DISPATCH_LOG_EVENT(context, @"In app purchase ANE initialized on iOS.");
+
+    DISPATCH_ANE_EVENT(context, EVENT_INITIALIZED, (uint8_t*)"done");
+
     return NULL;
 }
 
@@ -40,7 +43,7 @@ DEFINE_ANE_FUNCTION(getProducts) {
     
     productsRequestDelegate.context = context;
     productsRequest.delegate = productsRequestDelegate;
-    
+
     [productsRequest start];
     
     return NULL;
@@ -72,6 +75,50 @@ DEFINE_ANE_FUNCTION(buyProduct) {
     return NULL;
 }
 
+DEFINE_ANE_FUNCTION(consumeProduct) {
+    NSString *productId;
+    if ([typeConversionHelper FREGetObject:argv[0] asString:&productId] != FRE_OK) {
+        DISPATCH_ANE_EVENT(context, EVENT_PURCHASE_FAILURE, (uint8_t*)"No productId provided");
+        return NULL;
+    }
+
+    NSString *logMessage = [NSString stringWithFormat:@"Consume purchase by product %@", productId];
+    DISPATCH_LOG_EVENT(context, logMessage);
+
+    SKProduct *product = [productsRequestDelegate getProductWithId:productId];
+    if (product == nil) {
+        NSString *errorMessage = [NSString stringWithFormat:@"Product was not loaded with getProductWithId productId:%@, cannot consume it", productId];
+        DISPATCH_ANE_EVENT(context, EVENT_CONSUME_FAILURE, (uint8_t*)[errorMessage UTF8String]);
+        return NULL;
+    }
+
+    NSArray *transactions = [[SKPaymentQueue defaultQueue] transactions];
+    SKPaymentTransaction *toConsume = nil;
+    for (SKPaymentTransaction *transaction in transactions) {
+        if ([productId compare:transaction.payment.productIdentifier] == NSOrderedSame) {
+            toConsume = transaction;
+            break;
+        }
+    }
+
+    if (toConsume != nil) {
+        [[SKPaymentQueue defaultQueue] finishTransaction:toConsume];
+
+        NSString *message = [NSString stringWithFormat:@"Consume transaction: [%@]", toConsume.payment.productIdentifier];
+        DISPATCH_LOG_EVENT(context, message);
+
+        NSString *transactionJson = [transactionObserver buildJSONStringOfPurchaseWithTransaction:toConsume];
+        DISPATCH_ANE_EVENT(context, EVENT_CONSUME_SUCCESS, (uint8_t*)[transactionJson UTF8String]);
+
+    } else {
+        NSString *errorMessage = [NSString stringWithFormat:@"Can't find transaction for productId:%@, cannot consume it", productId];
+        DISPATCH_ANE_EVENT(context, EVENT_CONSUME_FAILURE, (uint8_t*)[errorMessage UTF8String]);
+    }
+
+    return NULL;
+}
+
+
 DEFINE_ANE_FUNCTION(restorePurchase) {
     
     DISPATCH_LOG_EVENT(context, @"Restoring the previous purchases ...");
@@ -88,6 +135,7 @@ void InAppPurchaseIosExtensionContextInitializer( void* extData, const uint8_t* 
     {
         MAP_FUNCTION(initialize, NULL),
         MAP_FUNCTION(getProducts, NULL),
+        MAP_FUNCTION(consumeProduct, NULL),
         MAP_FUNCTION(buyProduct, NULL),
         MAP_FUNCTION(restorePurchase, NULL)
     };
