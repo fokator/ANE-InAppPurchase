@@ -33,7 +33,7 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
     // PROPERTIES :
     /**
      * The context passed to the main method, it will be used in the activity response.
-     * TODO need this static?
+     * TODO need the static?
      */
     private static InAppPurchaseExtensionContext mContext;
 
@@ -45,10 +45,14 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
     public FREObject call(FREContext c, FREObject[] args) {
         mContext = (InAppPurchaseExtensionContext) c;
 
-        String productId, payload;
+        String productId;
+        String payload = null;
         try {
             productId = args[0].getAsString();
-            payload = args[1].getAsString();
+            if (args[1] != null) {
+
+                payload = args[1].getAsString();
+            }
 
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while retrieving the product ID! " + e.toString());
