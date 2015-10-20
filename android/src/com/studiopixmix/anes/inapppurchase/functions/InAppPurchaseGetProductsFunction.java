@@ -15,6 +15,7 @@ import org.json.JSONObject;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A function used to retrieve the product info for the given product IDs (formated in a String Vector). This method
@@ -40,6 +41,8 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
      */
     private static final String DETAILS_LIST = "DETAILS_LIST";
 
+    private static final int MAX_ONE_REQUEST_COUNT = 20;
+
     @Override
     public FREObject call(FREContext context, final FREObject[] args) {
 
@@ -48,71 +51,97 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
         ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
 
-        Activity activity = extensionContext.getActivity();
-        String packageName = activity.getPackageName();
-        IInAppBillingService iapService = extensionContext.getInAppBillingService();
+        if (productsIds.size() > MAX_ONE_REQUEST_COUNT) {
 
-        InAppPurchaseExtension.logToAS("Executing in background ... Activity : " + activity
-                + " (activity package name : " + packageName + ") ; Service : " + iapService);
+            InAppPurchaseExtension.logToAS("Warning, max items for one request is " + MAX_ONE_REQUEST_COUNT);
 
-        // Converts the given data to a bundle of products IDs.
-        Bundle products = new Bundle();
-        products.putStringArrayList(ITEM_ID_LIST, productsIds);
-        InAppPurchaseExtension.logToAS("Requesting the store for the products " + productsIds.toString());
-
-        // Retrieves the products details.
-        Bundle skuDetails;
-        try {
-            skuDetails = iapService.getSkuDetails(InAppPurchaseExtension.API_VERSION, packageName, "inapp", products);
-        } catch (Exception e) {
-            InAppPurchaseExtension.logToAS("Error while retrieving the products details : " + e.toString());
-            return null;
-        }
-
-        if (skuDetails == null) {
-
-            InAppPurchaseExtension.logToAS("Error while retrieving the products details : The returned products bundle is null!");
-            return null;
-        }
-
-        InAppPurchaseExtension.logToAS("Processing the received products bundle from the store ...");
-
-        // Parsing the received JSON if the response code is success.
-        int responseCode = skuDetails.getInt(RESPONSE_CODE);
-        InAppPurchaseExtension.logToAS("Response code : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
-        String finalJSON;
-        if (responseCode == ResponseCodes.BILLING_RESPONSE_RESULT_OK) {
-            // TODO simplify
-
-            ArrayList<String> detailsJson = skuDetails.getStringArrayList(DETAILS_LIST);
-            if (detailsJson == null || detailsJson.size() == 0) {
-                InAppPurchaseExtension.logToAS("No products details retrieved!");
-
-                if (productsIds.size() > 0) {
-
-                    dispatchInvalidProducts(productsIds, extensionContext);
-                }
-                return null;
+            List<List<String>> parts = chopped(productsIds, MAX_ONE_REQUEST_COUNT);
+            for (int i = 0; i < parts.size(); i++) {
+                ArrayList<String> portionIds = (ArrayList<String>) parts.get(i);
+                getSkuDetailsFromStore(extensionContext, portionIds);
             }
-            finalJSON = createResult(detailsJson, productsIds);
-
-            // Check if there is IDs left in productIds. If this is the case, there were invalid products in the parameters.
-            if (productsIds.size() > 0) {
-
-                dispatchInvalidProducts(productsIds, extensionContext);
-            }
-
-            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, finalJSON);
-
         } else {
 
-            InAppPurchaseExtension.logToAS("Error while loading the products : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+            getSkuDetailsFromStore(extensionContext, productsIds);
         }
 
         return null;
     }
 
-    private static String createResult(ArrayList<String> detailsJson, ArrayList<String> productsIds) {
+    // chops a list into non-view sublists of length L
+    static <T> List<List<T>> chopped(List<T> list, final int L) {
+        List<List<T>> parts = new ArrayList<List<T>>();
+        final int N = list.size();
+        for (int i = 0; i < N; i += L) {
+            parts.add(new ArrayList<T>(
+                            list.subList(i, Math.min(N, i + L)))
+            );
+        }
+        return parts;
+    }
+
+    private static void getSkuDetailsFromStore(InAppPurchaseExtensionContext extensionContext, ArrayList<String> productsIds) {
+
+        InAppPurchaseExtension.logToAS("Requesting the store for the products " + productsIds.toString());
+
+        Activity activity = extensionContext.getActivity();
+        String packageName = activity.getPackageName();
+        IInAppBillingService iapService = extensionContext.getInAppBillingService();
+
+        // create request
+        Bundle request = new Bundle();
+        request.putStringArrayList(ITEM_ID_LIST, productsIds);
+
+        Bundle response;
+        try {
+            response = iapService.getSkuDetails(InAppPurchaseExtension.API_VERSION, packageName, "inapp", request);
+        } catch (Exception e) {
+            InAppPurchaseExtension.logToAS("Error while retrieving the products details : " + e.toString());
+            return;
+        }
+
+        if (response == null) {
+            InAppPurchaseExtension.logToAS("Error while retrieving the products details : The returned products bundle is null!");
+            return;
+        }
+
+        InAppPurchaseExtension.logToAS("Processing the received products bundle from the store ...");
+
+        // Parsing the received JSON if the response code is success.
+        int responseCode = response.getInt(RESPONSE_CODE);
+        InAppPurchaseExtension.logToAS("Response code : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+
+        switch (responseCode) {
+            case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
+                // TODO simplify
+
+                ArrayList<String> detailsJson = response.getStringArrayList(DETAILS_LIST);
+                if (detailsJson == null || detailsJson.size() == 0) {
+                    InAppPurchaseExtension.logToAS("No products details retrieved!");
+
+                    if (productsIds.size() > 0) {
+
+                        dispatchInvalidProducts(productsIds, extensionContext);
+                    }
+                    return;
+                }
+                JSONArray result = createResult(detailsJson, productsIds);
+
+                // Check if there is IDs left in productIds. If this is the case, there were invalid products in the parameters.
+                if (productsIds.size() > 0) {
+
+                    dispatchInvalidProducts(productsIds, extensionContext);
+                }
+
+                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, result.toString());
+
+                break;
+            default:
+                InAppPurchaseExtension.logToAS("Error while loading the products : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
+        }
+    }
+
+    private static JSONArray createResult(ArrayList<String> detailsJson, ArrayList<String> productsIds) {
 
         ArrayList<JSONObject> details = new ArrayList<JSONObject>();
 
@@ -155,11 +184,10 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         InAppPurchaseExtension.logToAS("Found " + details.size() + " products.");
 
         JSONArray data = new JSONArray(details);
-        String finalJSON = data.toString();
 
-        InAppPurchaseExtension.logToAS("Returning " + finalJSON + " to the app.");
+        InAppPurchaseExtension.logToAS("Returning " + data.toString() + " to the app.");
 
-        return finalJSON;
+        return data;
     }
 
     /**
