@@ -14,4 +14,6 @@
 
 @property (nonatomic, assign) FREContext context;
 
+- (NSString *) buildJSONStringOfPurchaseWithTransaction:(SKPaymentTransaction *)transaction;
+
 @end

@@ -11,6 +11,7 @@
 #import "ExtensionDefs.h"
 
 @interface TransactionObserver () <SKPaymentTransactionObserver>
+
 @end
 
 @implementation TransactionObserver
@@ -27,7 +28,7 @@
                 break;
             
             case SKPaymentTransactionStatePurchased:
-                [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                //[[SKPaymentQueue defaultQueue] finishTransaction:transaction]; // TODO consume after purchase? optional configuration.
                 DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASE_SUCCESS, (uint8_t*)[[self buildJSONStringOfPurchaseWithTransaction:transaction] UTF8String]);
                 break;
                 
@@ -43,23 +44,23 @@
 }
 
 -(void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
-    NSMutableArray *purchases = [[NSMutableArray alloc] init];
+    NSMutableArray *purchasesSrt = [NSMutableArray array];
     NSString *logMessage;
-    int i = 0;
-    
+
     DISPATCH_LOG_EVENT(self.context, @"Let's get ready for a loop!");
     for(SKPaymentTransaction *transaction in queue.transactions) {
         logMessage = [NSString stringWithFormat:@"product identifier value : %@", transaction.payment.productIdentifier];
         DISPATCH_LOG_EVENT(self.context, logMessage);
-        
-        purchases[i] = transaction.payment.productIdentifier;
-        i++;
+
+        [purchasesSrt addObject: [self buildJSONStringOfPurchaseWithTransaction:transaction]];
     }
     
     DISPATCH_LOG_EVENT(self.context, @"Purchases array completed.");
-    NSString *result = [[purchases valueForKey:@"description"] componentsJoinedByString:@","];
+    NSString *result = [purchasesSrt componentsJoinedByString:@","];
     logMessage = [NSString stringWithFormat:@"Complete. Returning the following product IDs list : %@", result];
     DISPATCH_LOG_EVENT(self.context, logMessage);
+    
+    result = [NSString stringWithFormat:@"[%@]", result];
     DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASES_RETRIEVED, (uint8_t*) result.UTF8String);
 }
 
