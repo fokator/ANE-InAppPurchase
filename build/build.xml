@@ -122,15 +122,18 @@
 	<!-- ASDoc -->
 	<target name="doc" description="Generate ASDoc">
 		<echo message="Generating asdoc ..."/>
-		<mkdir dir="../doc"/>
+		<mkdir dir="../bin/doc"/>
 		<exec executable="${flex.sdk}/bin/asdoc${bat.ext}" failonerror="true">
             <arg line='-load-config="${flex.sdk}/frameworks/airmobile-config.xml"'/>
 			<arg line="-main-title '${name} ANE API Documentation'" />
             <arg line="-window-title '${name} ANE API Documentation'" />
             <arg line="-source-path ../actionscript/src" />
 			<arg line="-doc-sources ../actionscript/src" />
-			<arg line="-output ../doc" />
+			<arg line="-output ../bin/doc" />
         </exec>
+        <zip destfile="../bin/documentation.zip"
+             basedir="../bin/doc"
+                />
 		<echo message="Done."/>
 	</target>
 </project>
