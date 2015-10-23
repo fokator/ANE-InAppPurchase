@@ -41,8 +41,9 @@ The ANE will trigger all callbacks with events as the methods may not be synchro
 - Use the **restorePurchase()** method to get a list of all products IDs purchased by the user. It's up to you to update your app unlocked content or player's items for example following the returned list. Dispatches whether a *PurchasesRetrievedEvent* or a *PurchasesRetrievingFailed* following the restore result.
 - Use the **consumePurchase()** method to manually consume the given purchase token. Dispatches whether a *PurchaseConsumeSuccessEvent* or a *PurchaseConsumeFailureEvent* following the consume result. If success, the related *Purchase* is send as event data.
 
-TODO purchases automatically consumed after purchase
-TODO link to documentation on github
+- TODO purchases automatically consumed after purchase
+- TODO link to documentation on github
+
 For more info on the events data to handle in the callbacks, see the [full documentation here](https://rawgit.com/StudioPixMix/ANE-InAppPurchase/master/doc/index.html) .
 
 
