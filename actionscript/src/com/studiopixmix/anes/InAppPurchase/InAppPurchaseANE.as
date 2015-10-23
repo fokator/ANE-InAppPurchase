@@ -50,6 +50,8 @@ package com.studiopixmix.anes.InAppPurchase {
          */
         public function InAppPurchaseANE()
         {
+            trace("InAppPurchaseANE", VERSION);
+
             _extContext = ExtensionContext.createExtensionContext(EXTENSION_ID, null);
             if (_extContext != null) {
 
