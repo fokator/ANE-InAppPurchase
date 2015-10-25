@@ -19,8 +19,17 @@ package com.studiopixmix.anes.InAppPurchase {
     /**
      * To use this extension, create a new instance and call initialize() before trying to interact with it.
      * Once the ANE is initialized,
+     *
+     * TODO rewrite evens system
+     * TODO add Event metadata tags
+     * TODO add optional signature verification (Android)
+     * TODO add optional automatic consumable purchases 
+     *
      */
     public class InAppPurchaseANE extends EventDispatcher {
+
+        // TODO events meta
+        //[Event(name="EVENT_LOG", type="com.studiopixmix.anes.InAppPurchase.event.InAppPurchaseANEEvent")]
 
         /**
          * Whether the ANE is supported on the current device or not.
@@ -56,6 +65,9 @@ package com.studiopixmix.anes.InAppPurchase {
             if (_extContext != null) {
 
                 _extContext.addEventListener(StatusEvent.STATUS, onStatusEvent);
+            } else {
+
+                trace("ERROR - Extension context is null. Please check if extension.xml is setup correctly.");
             }
         }
 
@@ -83,6 +95,7 @@ package com.studiopixmix.anes.InAppPurchase {
                 return;
 
             if (productsIds.length == 0) {
+
                 dispatchEvent(new ProductsInvalidEvent(productsIds));
                 return;
             }
@@ -94,7 +107,7 @@ package com.studiopixmix.anes.InAppPurchase {
          * Buys the given product. Dispatches PURCHASE_SUCCESS, PURCHASE_CANCELED and PURCHASE_FAILURE events.
          *
          * @param productId        The native product ID
-         * @param devPayload    An optional developper payload (Android-only)
+         * @param devPayload    An optional developer payload (Android-only)
          */
         public function buyProduct(productId:String, devPayload:String = null):void
         {
@@ -105,7 +118,9 @@ package com.studiopixmix.anes.InAppPurchase {
         }
 
         /**
-         * Consume purchase by productId.
+         * Consume purchase by productId. Dispatches CONSUME_SUCCESS, CONSUME_FAILED events.
+         *
+         * @param productId Native store products ID.
          */
         public function consumePurchase(productId:String):void
         {
