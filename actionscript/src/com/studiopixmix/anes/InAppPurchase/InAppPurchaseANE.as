@@ -81,7 +81,7 @@ package com.studiopixmix.anes.inapppurchase {
         }
 
         // CONSTANTS
-        public static const VERSION:String = "1.0.0";
+        public static const VERSION:String = "1.0.1";
         private static const EXTENSION_ID:String = "com.studiopixmix.anes.inapppurchase";
 
         private static const NATIVE_METHOD_GET_PRODUCTS:String = "getProducts";
@@ -93,7 +93,6 @@ package com.studiopixmix.anes.inapppurchase {
         // PROPERTIES
         private var _extContext:ExtensionContext;
 
-        // CONSTRUCTOR
         /**
          * Creates the extension context if possible. Call <code>initialize()</code> before using the rest of the extension.
          */
@@ -109,6 +108,23 @@ package com.studiopixmix.anes.inapppurchase {
 
                 trace("ERROR - Extension context is null. Please check if extension.xml is setup correctly.");
             }
+        }
+
+        /**
+         * Dispose extension context object.
+         *
+         * @return Return true if it success.
+         */
+        public function dispose():Boolean
+        {
+            if (_extContext != null) {
+
+                _extContext.removeEventListener(StatusEvent.STATUS, onStatusEvent);
+                _extContext.dispose();
+
+                return true;
+            }
+            return false;
         }
 
         ////////////////
