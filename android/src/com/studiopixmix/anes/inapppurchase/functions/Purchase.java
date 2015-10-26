@@ -14,11 +14,15 @@ public class Purchase extends JSONObject {
 
         put("productId", item.getString("productId"));
         put("transactionTimestamp", item.getInt("purchaseTime"));
-        put("developerPayload", item.get("developerPayload"));
         put("purchaseToken", item.get("purchaseToken"));
+        put("purchaseState", item.get("purchaseState"));
         put("orderId", item.get("orderId"));
         put("signature", dataSignature);
         put("playStoreResponse", purchaseData);
+        if (item.has("developerPayload")) {
+
+            put("developerPayload", item.get("developerPayload"));
+        }
     }
 
     public String getProductId() {
