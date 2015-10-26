@@ -23,7 +23,8 @@ package com.studiopixmix.anes.InAppPurchase {
      * TODO rewrite evens system
      * TODO add Event metadata tags
      * TODO add optional signature verification (Android)
-     * TODO add optional automatic consumable purchases 
+     * TODO add optional automatic consumable purchases
+     * TODO nice service dispose
      *
      */
     public class InAppPurchaseANE extends EventDispatcher {
