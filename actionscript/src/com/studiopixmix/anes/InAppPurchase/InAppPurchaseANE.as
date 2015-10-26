@@ -1,27 +1,59 @@
-package com.studiopixmix.anes.InAppPurchase {
-    import com.studiopixmix.anes.InAppPurchase.event.InAppPurchaseANEEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.LogEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.ProductsInvalidEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.ProductsLoadedEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.PurchaseCanceledEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.PurchaseConsumeFailureEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.PurchaseConsumeSuccessEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.PurchaseFailureEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.PurchaseSuccessEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.PurchasesRetrievedEvent;
-    import com.studiopixmix.anes.InAppPurchase.event.PurchasesRetrievingFailed;
+package com.studiopixmix.anes.inapppurchase {
+    import com.studiopixmix.anes.inapppurchase.event.InAppPurchaseInitializeEvent;
+    import com.studiopixmix.anes.inapppurchase.event.InAppPurchaseLogEvent;
+    import com.studiopixmix.anes.inapppurchase.event.ProductsInvalidEvent;
+    import com.studiopixmix.anes.inapppurchase.event.ProductsLoadedEvent;
+    import com.studiopixmix.anes.inapppurchase.event.PurchaseCanceledEvent;
+    import com.studiopixmix.anes.inapppurchase.event.PurchaseConsumeFailureEvent;
+    import com.studiopixmix.anes.inapppurchase.event.PurchaseConsumeSuccessEvent;
+    import com.studiopixmix.anes.inapppurchase.event.PurchaseFailureEvent;
+    import com.studiopixmix.anes.inapppurchase.event.PurchaseSuccessEvent;
+    import com.studiopixmix.anes.inapppurchase.event.PurchasesRetrievedEvent;
+    import com.studiopixmix.anes.inapppurchase.event.PurchasesRetrievingFailed;
 
+    import flash.events.Event;
     import flash.events.EventDispatcher;
     import flash.events.StatusEvent;
     import flash.external.ExtensionContext;
     import flash.system.Capabilities;
 
+    /** Event dispatched when the init is complete. */
+    [Event(name="EVENT_INITIALIZED", type="com.studiopixmix.anes.inapppurchase.event.InAppPurchaseInitializeEvent")]
+
+    /** Event dispatched when the init is complete. */
+    [Event(name="EVENT_LOG", type="com.studiopixmix.anes.inapppurchase.event.InAppPurchaseLogEvent")]
+
+    /** Event dispatched when the products have been loaded. */
+    [Event(name="EVENT_PRODUCTS_LOADED", type="com.studiopixmix.anes.inapppurchase.event.ProductsLoadedEvent")]
+
+    /** Event dispatched when one or more invalid product(s) have been passed to getProducts or buyProducts. */
+    [Event(name="EVENT_PRODUCTS_INVALID", type="com.studiopixmix.anes.inapppurchase.event.ProductsInvalidEvent")]
+
+    /** Event dispatched when the buy intent has succeeded and the product has been consumed. */
+    [Event(name="EVENT_PURCHASE_SUCCESS", type="com.studiopixmix.anes.inapppurchase.event.PurchaseSuccessEvent")]
+
+    /** Event dispatched when the user explicitely canceled the purchase. */
+    [Event(name="EVENT_PURCHASE_CANCELED", type="com.studiopixmix.anes.inapppurchase.event.PurchaseCanceledEvent")]
+
+    /** Event dispatched when the buy intent has failed. */
+    [Event(name="EVENT_PURCHASE_FAILURE", type="com.studiopixmix.anes.inapppurchase.event.PurchaseFailureEvent")]
+
+    /** Event dispatched when a product consumption succeeded. */
+    [Event(name="EVENT_CONSUME_SUCCESS", type="com.studiopixmix.anes.inapppurchase.event.PurchaseConsumeSuccessEvent")]
+
+    /** Event dispatched when a product consumption has failed. */
+    [Event(name="EVENT_CONSUME_FAILED", type="com.studiopixmix.anes.inapppurchase.event.PurchaseConsumeFailureEvent")]
+
+    /** Event dispatched when calling the <code>restorePurchase</code> function. Dispatched after having requested the store for the user's previous purchases. */
+    [Event(name="EVENT_PURCHASES_RETRIEVED", type="com.studiopixmix.anes.inapppurchase.event.PurchasesRetrievedEvent")]
+
+    /** Event dispatched when the call to <code>getPurchases</code> failed. */
+    [Event(name="EVENT_PURCHASES_RETRIEVING_FAILED", type="com.studiopixmix.anes.inapppurchase.event.PurchasesRetrievingFailed")]
+
     /**
      * To use this extension, create a new instance and call initialize() before trying to interact with it.
      * Once the ANE is initialized,
      *
-     * TODO rewrite evens system
-     * TODO add Event metadata tags
      * TODO add optional signature verification (Android)
      * TODO add optional automatic consumable purchases
      * TODO nice service dispose
@@ -29,16 +61,23 @@ package com.studiopixmix.anes.InAppPurchase {
      */
     public class InAppPurchaseANE extends EventDispatcher {
 
-        // TODO events meta
-        //[Event(name="EVENT_LOG", type="com.studiopixmix.anes.InAppPurchase.event.InAppPurchaseANEEvent")]
-
         /**
          * Whether the ANE is supported on the current device or not.
          * This ANE only works on iOS and Android.
          */
         public static function isSupported():Boolean
         {
-            return Capabilities.manufacturer.indexOf('iOS') > -1 || Capabilities.manufacturer.indexOf('Android') > -1;
+            return isIOS() || isAndroid();
+        }
+
+        public static function isIOS():Boolean
+        {
+            return Capabilities.manufacturer.indexOf('iOS') > -1;
+        }
+
+        public static function isAndroid():Boolean
+        {
+            return Capabilities.manufacturer.indexOf('Android') > -1;
         }
 
         // CONSTANTS
@@ -143,7 +182,7 @@ package com.studiopixmix.anes.InAppPurchase {
 
             _extContext.call(NATIVE_METHOD_RESTORE_PURCHASES);
         }
-        
+
         /////////////////
         // PRIVATE API //
         /////////////////
@@ -154,50 +193,50 @@ package com.studiopixmix.anes.InAppPurchase {
          */
         private function onStatusEvent(event:StatusEvent):void
         {
-            var eventToDispatch:InAppPurchaseANEEvent;
+            var eventToDispatch:Event;
 
             switch (event.code) {
-                case InAppPurchaseANEEvent.INITIALIZED:
-                    eventToDispatch = new InAppPurchaseANEEvent(InAppPurchaseANEEvent.INITIALIZED);
+                case InAppPurchaseInitializeEvent.INITIALIZED:
+                    eventToDispatch = InAppPurchaseInitializeEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.LOG:
-                    eventToDispatch = LogEvent.FromStatusEvent(event);
+                case InAppPurchaseLogEvent.LOG:
+                    eventToDispatch = InAppPurchaseLogEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.PRODUCTS_LOADED:
+                case ProductsLoadedEvent.PRODUCTS_LOADED:
                     eventToDispatch = ProductsLoadedEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.PRODUCTS_INVALID:
+                case ProductsInvalidEvent.PRODUCTS_INVALID:
                     eventToDispatch = ProductsInvalidEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.PURCHASE_SUCCESS:
+                case PurchaseSuccessEvent.PURCHASE_SUCCESS:
                     eventToDispatch = PurchaseSuccessEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.PURCHASE_CANCELED:
+                case PurchaseCanceledEvent.PURCHASE_CANCELED:
                     eventToDispatch = PurchaseCanceledEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.PURCHASE_FAILURE:
+                case PurchaseFailureEvent.PURCHASE_FAILURE:
                     eventToDispatch = PurchaseFailureEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.CONSUME_SUCCESS:
+                case PurchaseConsumeSuccessEvent.CONSUME_SUCCESS:
                     eventToDispatch = PurchaseConsumeSuccessEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.CONSUME_FAILED:
+                case PurchaseConsumeFailureEvent.CONSUME_FAILED:
                     eventToDispatch = PurchaseConsumeFailureEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.PURCHASES_RETRIEVED:
+                case PurchasesRetrievedEvent.PURCHASES_RETRIEVED:
                     eventToDispatch = PurchasesRetrievedEvent.FromStatusEvent(event);
 
                     break;
-                case InAppPurchaseANEEvent.PURCHASES_RETRIEVING_FAILED:
+                case PurchasesRetrievingFailed.PURCHASES_RETRIEVING_FAILED:
                     eventToDispatch = PurchasesRetrievingFailed.FromStatusEvent(event);
 
                     break;

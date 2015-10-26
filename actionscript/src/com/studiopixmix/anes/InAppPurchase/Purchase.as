@@ -1,4 +1,4 @@
-package com.studiopixmix.anes.InAppPurchase {
+package com.studiopixmix.anes.inapppurchase {
     /**
      * Represents a successfull purchase.
      * For more informations about the fields, see the related stores documentations.
