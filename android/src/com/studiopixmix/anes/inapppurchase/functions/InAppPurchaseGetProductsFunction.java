@@ -11,6 +11,7 @@ import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtension;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseExtensionContext;
 import com.studiopixmix.anes.inapppurchase.InAppPurchaseMessages;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.NumberFormat;
@@ -51,18 +52,32 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         InAppPurchaseExtensionContext extensionContext = (InAppPurchaseExtensionContext) context;
         ArrayList<String> productsIds = FREArrayToArrayList((FREArray) args[0]);
 
-        if (productsIds.size() > MAX_ONE_REQUEST_COUNT) {
+        SkuDetailResponder responder = null;
 
+        if (productsIds.size() > MAX_ONE_REQUEST_COUNT) {
             InAppPurchaseExtension.logToAS("Warning, max items for one request is " + MAX_ONE_REQUEST_COUNT);
 
             List<List<String>> parts = chopped(productsIds, MAX_ONE_REQUEST_COUNT);
             for (int i = 0; i < parts.size(); i++) {
                 ArrayList<String> portionIds = (ArrayList<String>) parts.get(i);
-                getSkuDetailsFromStore(extensionContext, portionIds);
+
+                SkuDetailResponder re = getSkuDetailsFromStore(extensionContext, portionIds);
+                if (responder == null) responder = re;
+                else responder.add(re);
             }
         } else {
 
-            getSkuDetailsFromStore(extensionContext, productsIds);
+            responder = getSkuDetailsFromStore(extensionContext, productsIds);
+        }
+
+        if (responder.hasResultIds()) {
+
+            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, responder.resultIds.toString());
+        }
+        if (responder.hasInvalidIds()) {
+
+            InAppPurchaseExtension.logToAS("Invalid products IDs count: " + responder.invalidIds.size());
+            dispatchInvalidProducts(responder.invalidIds, context);
         }
 
         return null;
@@ -80,7 +95,7 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         return parts;
     }
 
-    private static void getSkuDetailsFromStore(InAppPurchaseExtensionContext extensionContext, ArrayList<String> productsIds) {
+    private static SkuDetailResponder getSkuDetailsFromStore(InAppPurchaseExtensionContext extensionContext, ArrayList<String> productsIds) {
 
         InAppPurchaseExtension.logToAS("Requesting the store for the products " + productsIds.toString());
 
@@ -88,21 +103,25 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         String packageName = activity.getPackageName();
         IInAppBillingService iapService = extensionContext.getInAppBillingService();
 
+        // create responder
+        SkuDetailResponder responder = new SkuDetailResponder();
+
         // create request
         Bundle request = new Bundle();
         request.putStringArrayList(ITEM_ID_LIST, productsIds);
 
+        // response from service
         Bundle response;
         try {
             response = iapService.getSkuDetails(InAppPurchaseExtension.API_VERSION, packageName, "inapp", request);
         } catch (Exception e) {
             InAppPurchaseExtension.logToAS("Error while retrieving the products details : " + e.toString());
-            return;
+            return responder;
         }
 
         if (response == null) {
             InAppPurchaseExtension.logToAS("Error while retrieving the products details : The returned products bundle is null!");
-            return;
+            return responder;
         }
 
         InAppPurchaseExtension.logToAS("Processing the received products bundle from the store ...");
@@ -110,37 +129,40 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         // Parsing the received JSON if the response code is success.
         int responseCode = response.getInt(RESPONSE_CODE);
         InAppPurchaseExtension.logToAS("Response code : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
-
         switch (responseCode) {
             case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
-                // TODO simplify
 
                 ArrayList<String> detailsJson = response.getStringArrayList(DETAILS_LIST);
                 if (detailsJson == null || detailsJson.size() == 0) {
                     InAppPurchaseExtension.logToAS("No products details retrieved!");
 
-                    if (productsIds.size() > 0) {
+                    if (productsIds.size() > 0) responder.addInvalidIds(productsIds);
 
-                        dispatchInvalidProducts(productsIds, extensionContext);
-                    }
-                    return;
+                } else {
+
+                    JSONArray result = createResult(detailsJson, productsIds);
+
+                    // Check if there is IDs left in productIds. If this is the case, there were invalid products in the parameters.
+                    if (productsIds.size() > 0) responder.addInvalidIds(productsIds);
+
+                    responder.addResultIds(result);
                 }
-                JSONArray result = createResult(detailsJson, productsIds);
-
-                // Check if there is IDs left in productIds. If this is the case, there were invalid products in the parameters.
-                if (productsIds.size() > 0) {
-
-                    dispatchInvalidProducts(productsIds, extensionContext);
-                }
-
-                extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, result.toString());
-
                 break;
             default:
                 InAppPurchaseExtension.logToAS("Error while loading the products : " + ErrorMessagesBillingCodes.ERRORS_MESSAGES.get(responseCode));
         }
+
+        return responder;
     }
 
+    /**
+     * This method removes the received product ID from the "productsIds" received as parameters.
+     * It remains only invalid ids in ArrayList.
+     *
+     * @param detailsJson Service result.
+     * @param productsIds Removes the received product ID from the ids received as parameters.
+     * @return
+     */
     private static JSONArray createResult(ArrayList<String> detailsJson, ArrayList<String> productsIds) {
 
         ArrayList<JSONObject> details = new ArrayList<JSONObject>();
@@ -228,4 +250,37 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
         context.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_INVALID, invalidProductsJson.toString());
     }
 
+    private static class SkuDetailResponder {
+        private ArrayList<String> invalidIds = new ArrayList<String>();
+        private JSONArray resultIds = new JSONArray();
+
+        void addInvalidIds(ArrayList<String> ids) {
+            for (int j = 0; j < ids.size(); j++) {
+                invalidIds.add(ids.get(j));
+            }
+        }
+
+        Boolean hasInvalidIds() {
+            return invalidIds.size() > 0;
+        }
+
+        void addResultIds(JSONArray ids) {
+            for (int i = 0; i < ids.length(); i++) {
+                try {
+                    resultIds.put(ids.get(i));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        Boolean hasResultIds() {
+            return resultIds.length() > 0;
+        }
+
+        void add(SkuDetailResponder responder) {
+            addInvalidIds(responder.invalidIds);
+            addResultIds(responder.resultIds);
+        }
+    }
 }
