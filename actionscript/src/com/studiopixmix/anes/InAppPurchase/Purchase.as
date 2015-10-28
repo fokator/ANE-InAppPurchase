@@ -1,4 +1,4 @@
-package com.studiopixmix.anes.InAppPurchase {
+package com.studiopixmix.anes.inapppurchase {
     /**
      * Represents a successfull purchase.
      * For more informations about the fields, see the related stores documentations.
@@ -19,6 +19,7 @@ package com.studiopixmix.anes.InAppPurchase {
         public var orderId:String;
         public var playStoreResponse:String;
         public var signature:String;
+        public var purchaseState:String;
 
         public function Purchase()
         {
@@ -36,6 +37,7 @@ package com.studiopixmix.anes.InAppPurchase {
                     "purchaseToken:" + purchaseToken + ", " +
                     "orderId:" + orderId + ", " +
                     "playStoreResponse:" + playStoreResponse + ", " +
+                    "purchaseState:" + purchaseState + ", " +
                     "signature:" + signature + "]>";
         }
 
@@ -57,6 +59,7 @@ package com.studiopixmix.anes.InAppPurchase {
             newPurchase.orderId = jsonPurchase.hasOwnProperty("orderId") ? jsonPurchase.orderId : "";
             newPurchase.playStoreResponse = jsonPurchase.hasOwnProperty("playStoreResponse") ? jsonPurchase.playStoreResponse : "";
             newPurchase.signature = jsonPurchase.hasOwnProperty("signature") ? jsonPurchase.signature : "";
+            newPurchase.purchaseState = jsonPurchase.hasOwnProperty("purchaseState") ? jsonPurchase.purchaseState : "";
 
             return newPurchase;
         }

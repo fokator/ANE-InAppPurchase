@@ -1,24 +1,27 @@
-package com.studiopixmix.anes.InAppPurchase.event {
-    import com.studiopixmix.anes.InAppPurchase.Purchase;
+package com.studiopixmix.anes.inapppurchase.event {
+    import com.studiopixmix.anes.inapppurchase.Purchase;
 
+    import flash.events.Event;
     import flash.events.StatusEvent;
 
     /**
      * Event dispatched when the the request to the store to retrieve the user's previous purchases succeeded.
      * This event contains a collection of product IDs
      */
-    public class PurchasesRetrievedEvent extends InAppPurchaseANEEvent {
+    public class PurchasesRetrievedEvent extends Event {
+        /** Event dispatched when calling the <code>restorePurchase</code> function. Dispatched after having requested the store for the user's previous purchases. */
+        public static const PURCHASES_RETRIEVED:String = "EVENT_PURCHASES_RETRIEVED";
 
         private var _purchases:Vector.<Purchase>;
 
         /**
-         * TODO create private constructor
+         * Retrieve the user's previous purchases succeeded
          *
          * @param purchases
          */
         public function PurchasesRetrievedEvent(purchases:Vector.<Purchase>)
         {
-            super(InAppPurchaseANEEvent.PURCHASES_RETRIEVED);
+            super(PURCHASES_RETRIEVED);
 
             _purchases = purchases;
         }
@@ -29,7 +32,6 @@ package com.studiopixmix.anes.InAppPurchase.event {
         }
 
         /**
-         * TODO factory method
          * Builds a PurchasesRetrievedEvent from the given StatusEvent.
          */
         public static function FromStatusEvent(statusEvent:StatusEvent):PurchasesRetrievedEvent

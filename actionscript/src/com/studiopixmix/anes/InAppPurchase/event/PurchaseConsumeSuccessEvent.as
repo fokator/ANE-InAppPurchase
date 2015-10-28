@@ -1,18 +1,21 @@
-package com.studiopixmix.anes.InAppPurchase.event {
-    import com.studiopixmix.anes.InAppPurchase.Purchase;
+package com.studiopixmix.anes.inapppurchase.event {
+    import com.studiopixmix.anes.inapppurchase.Purchase;
 
+    import flash.events.Event;
     import flash.events.StatusEvent;
 
     /**
      * Event dispatched when a consume product call has succeeded.
      */
-    public class PurchaseConsumeSuccessEvent extends InAppPurchaseANEEvent {
+    public class PurchaseConsumeSuccessEvent extends Event {
+        /** Event dispatched when a product consumption succeeded. */
+        public static const CONSUME_SUCCESS:String = "EVENT_CONSUME_SUCCESS";
 
         private var _purchase:Purchase;
 
         public function PurchaseConsumeSuccessEvent(purchase:Purchase)
         {
-            super(InAppPurchaseANEEvent.CONSUME_SUCCESS);
+            super(CONSUME_SUCCESS);
 
             _purchase = purchase;
         }
