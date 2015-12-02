@@ -14,7 +14,7 @@ public class InAppPurchaseExtension implements FREExtension {
      * The in-app billing API version.
      */
     public static final int API_VERSION = 3;
-    
+
     // PROPERTIES :
     /**
      * The logging TAG.
@@ -23,8 +23,9 @@ public class InAppPurchaseExtension implements FREExtension {
 
     /**
      * A reference to the InAppPurchase extension context.
+     * TODO make no static
      */
-    public static InAppPurchaseExtensionContext iapContext;
+    private static InAppPurchaseExtensionContext iapContext;
 
 
     // METHODS :
@@ -82,8 +83,11 @@ public class InAppPurchaseExtension implements FREExtension {
         log(message);
 
         if (iapContext != null) {
+            try {
 
-            iapContext.dispatchStatusEventAsync(InAppPurchaseMessages.LOG, "[" + TAG + "] : " + message);
+                iapContext.dispatchStatusEventAsync(InAppPurchaseMessages.LOG, "[" + TAG + "] : " + message);
+            } catch (Exception e) {
+            }
         }
     }
 
