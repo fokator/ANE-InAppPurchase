@@ -22,8 +22,18 @@
     self.currentResponse = response;
     
     [self dispatchEventForInvalidProducts];
-
-    self.products = response.products;
+	
+    NSMutableArray *result = [NSMutableArray arrayWithArray:self.products];
+    for (SKProduct *product in response.products) {
+		bool isNew = true;
+		for (SKProduct *prod in result) {
+			if ([product.productIdentifier isEqualToString:prod.productIdentifier]) {
+				isNew = false;
+			}
+		}
+		if (isNew) [result addObject:product];
+	}
+	self.products = result;
     
     DISPATCH_LOG_EVENT(self.context, @"Building JSON of the loaded products.");
 
