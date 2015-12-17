@@ -136,10 +136,13 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
                     case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
 
                         JSONObject item = null;
-                        Boolean hasSimilarPayload = false;
+                        Boolean hasSimilarPayload = true;
                         try {
                             item = new JSONObject(purchaseData);
-                            hasSimilarPayload = devPayload.equals(item.getString("developerPayload"));
+                            if (item.has("developerPayload")) {
+
+                                hasSimilarPayload = devPayload.equals(item.getString("developerPayload"));
+                            }
                         } catch (Exception e) {
                             mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, "Error while converting the bought product data to JSONObject!");
                             return;
