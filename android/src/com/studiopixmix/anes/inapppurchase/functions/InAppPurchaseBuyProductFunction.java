@@ -136,7 +136,7 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
                     case ResponseCodes.BILLING_RESPONSE_RESULT_OK:
 
                         JSONObject item = null;
-                        Boolean hasSimilarPayload = true;
+                        Boolean hasSimilarPayload = true; // TODO weird flow
                         try {
                             item = new JSONObject(purchaseData);
                             if (item.has("developerPayload")) {
