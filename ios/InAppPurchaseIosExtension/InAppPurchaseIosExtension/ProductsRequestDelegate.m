@@ -21,7 +21,7 @@
     
     self.currentResponse = response;
     
-    [self dispatchEventForInvalidProducts];
+    //[self dispatchEventForInvalidProducts];
 	
     NSMutableArray *result = [NSMutableArray arrayWithArray:self.products];
     for (SKProduct *product in response.products) {
@@ -40,14 +40,18 @@
     NSString *productsReturned = [self buildJSONStringOfProducts:response.products];
     
     DISPATCH_LOG_EVENT(self.context, @"Dispatching JSON built.");
-    
+
+    // TODO added invalidProductIdentifiers
+    // TODO create message object for AS
     DISPATCH_ANE_EVENT(self.context, EVENT_PRODUCTS_LOADED, (uint8_t*)productsReturned.UTF8String);
 }
 
+/*
 - (void) dispatchEventForInvalidProducts {
     if (self.currentResponse.invalidProductIdentifiers.count > 0)
         DISPATCH_ANE_EVENT(self.context, EVENT_PRODUCTS_INVALID, (uint8_t*)[[self.currentResponse.invalidProductIdentifiers componentsJoinedByString:@","] UTF8String]);
 }
+*/
 
 - (SKProduct *) getProductWithId:(NSString *)productId {
     if (self.products == nil)
@@ -63,9 +67,13 @@
 
 - (NSString *) buildJSONStringOfProducts:(NSArray *)products {
     NSMutableArray *productsJSONArray = [[NSMutableArray alloc] init];
-    
-    for (SKProduct *product in products)
+    NSString *logMessage;
+    for (SKProduct *product in products) {
+	    logMessage = [NSString stringWithFormat:@" - product : %@", [self buildJSONDictionaryOfProduct:product]];
+		DISPATCH_LOG_EVENT(self.context, logMessage);
+
         [productsJSONArray addObject:[self buildJSONDictionaryOfProduct:product]];
+	}
 
     NSData *data = [NSJSONSerialization dataWithJSONObject:productsJSONArray options:NSJSONWritingPrettyPrinted error:nil];
     
