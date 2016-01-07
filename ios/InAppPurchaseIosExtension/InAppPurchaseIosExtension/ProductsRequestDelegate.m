@@ -38,20 +38,15 @@
     DISPATCH_LOG_EVENT(self.context, @"Building JSON of the loaded products.");
 
     NSString *productsReturned = [self buildJSONStringOfProducts:response.products];
-    
-    DISPATCH_LOG_EVENT(self.context, @"Dispatching JSON built.");
+	NSData *invalidJsonData = [NSJSONSerialization dataWithJSONObject:self.currentResponse.invalidProductIdentifiers options:NSJSONWritingPrettyPrinted error:nil];
+	NSString *invalid = [[NSString alloc] initWithData:invalidJsonData encoding:NSUTF8StringEncoding];	
+	NSString *jsonString = [NSString stringWithFormat:@"{\"resultIds\":%@ ,\"invalidIds\":%@}", productsReturned, invalid];
 
-    // TODO added invalidProductIdentifiers
-    // TODO create message object for AS
-    DISPATCH_ANE_EVENT(self.context, EVENT_PRODUCTS_LOADED, (uint8_t*)productsReturned.UTF8String);
+	NSString *debugMessage = [NSString stringWithFormat:@"Dispatching JSON built.  %@", jsonString];
+    DISPATCH_LOG_EVENT(self.context, debugMessage);
+	
+    DISPATCH_ANE_EVENT(self.context, EVENT_PRODUCTS_LOADED, (uint8_t*)jsonString.UTF8String);
 }
-
-/*
-- (void) dispatchEventForInvalidProducts {
-    if (self.currentResponse.invalidProductIdentifiers.count > 0)
-        DISPATCH_ANE_EVENT(self.context, EVENT_PRODUCTS_INVALID, (uint8_t*)[[self.currentResponse.invalidProductIdentifiers componentsJoinedByString:@","] UTF8String]);
-}
-*/
 
 - (SKProduct *) getProductWithId:(NSString *)productId {
     if (self.products == nil)

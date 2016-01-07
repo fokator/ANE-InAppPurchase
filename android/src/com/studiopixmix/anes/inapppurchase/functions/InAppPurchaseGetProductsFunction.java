@@ -70,19 +70,20 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
             responder = getSkuDetailsFromStore(extensionContext, productsIds);
         }
 
-        // TODO added invalidIds to event
-        // TODO create message object for AS
-        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, responder.resultIds.toString());
+        class ProductsLoadedJSONString {
+            private final String resultIds;
+            private final String invalidIds;
 
-//        if (responder.hasResultIds()) {
-//
-//            extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, responder.resultIds.toString());
-//        }
-//        if (responder.hasInvalidIds()) {
-//
-//            InAppPurchaseExtension.logToAS("Invalid products IDs count: " + responder.invalidIds.size());
-//            dispatchInvalidProducts(responder.invalidIds, context);
-//        }
+            public ProductsLoadedJSONString(SkuDetailResponder responder) {
+                resultIds = responder.resultIds.toString();
+                invalidIds = responder.invalidIds.toString();
+            }
+
+            public String toJSONString() {
+                return "{\"resultIds\":" + resultIds + ", \"invalidIds\":" + invalidIds + "}";
+            }
+        }
+        extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_LOADED, new ProductsLoadedJSONString(responder).toJSONString());
 
         return null;
     }
@@ -241,18 +242,6 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
 
         return list;
     }
-
-    /**
-     * Dispatches a <code>PRODUCTS_INVALID</code> with the given collection of string as related product IDs.
-     */
-//    private static void dispatchInvalidProducts(ArrayList<String> productIds, FREContext context) {
-//        JSONArray invalidProductsJson = new JSONArray();
-//        int i, length;
-//        for (i = 0, length = productIds.size(); i < length; i++) {
-//            invalidProductsJson.put(productIds.get(i));
-//        }
-//        context.dispatchStatusEventAsync(InAppPurchaseMessages.PRODUCTS_INVALID, invalidProductsJson.toString());
-//    }
 
     private static class SkuDetailResponder {
         private ArrayList<String> invalidIds = new ArrayList<String>();
