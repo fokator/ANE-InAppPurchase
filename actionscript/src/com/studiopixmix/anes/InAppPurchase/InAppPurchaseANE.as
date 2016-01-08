@@ -50,10 +50,9 @@ package com.studiopixmix.anes.inapppurchase {
      * To use this extension, create a new instance and call initialize() before trying to interact with it.
      * Once the ANE is initialized,
      *
-     * TODO create message object from native
+     * TODO create message object from native in "statusEvent.level"
      * TODO add optional signature verification (Android)
      * TODO add optional automatic consumable purchases
-     * TODO nice service dispose
      *
      */
     public class InAppPurchaseANE extends EventDispatcher {
