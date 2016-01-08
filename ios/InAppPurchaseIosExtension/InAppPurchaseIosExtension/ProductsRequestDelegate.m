@@ -37,15 +37,19 @@
     
     DISPATCH_LOG_EVENT(self.context, @"Building JSON of the loaded products.");
 
-    NSString *productsReturned = [self buildJSONStringOfProducts:response.products];
-	NSData *invalidJsonData = [NSJSONSerialization dataWithJSONObject:self.currentResponse.invalidProductIdentifiers options:NSJSONWritingPrettyPrinted error:nil];
-	NSString *invalid = [[NSString alloc] initWithData:invalidJsonData encoding:NSUTF8StringEncoding];	
-	NSString *jsonString = [NSString stringWithFormat:@"{\"resultIds\":%@ ,\"invalidIds\":%@}", productsReturned, invalid];
+    NSString *returnedProducts = [self buildJSONStringOfProducts:response.products];
+	NSString *invalidIds = [ProductsRequestDelegate buildJsonString:self.currentResponse.invalidProductIdentifiers];
+	NSString *jsonStringToDispatch = [NSString stringWithFormat:@"{\"resultIds\":%@ ,\"invalidIds\":%@}", returnedProducts, invalidIds];
 
-	NSString *debugMessage = [NSString stringWithFormat:@"Dispatching JSON built.  %@", jsonString];
+	NSString *debugMessage = [NSString stringWithFormat:@"Dispatching JSON built.  %@", jsonStringToDispatch];
     DISPATCH_LOG_EVENT(self.context, debugMessage);
 	
-    DISPATCH_ANE_EVENT(self.context, EVENT_PRODUCTS_LOADED, (uint8_t*)jsonString.UTF8String);
+    DISPATCH_ANE_EVENT(self.context, EVENT_PRODUCTS_LOADED, (uint8_t*)jsonStringToDispatch.UTF8String);
+}
+
++ (NSString *) buildJsonString:(NSObject *) object {
+	NSData *jsonData = [NSJSONSerialization dataWithJSONObject:object options:NSJSONWritingPrettyPrinted error: nil];
+	return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];	
 }
 
 - (SKProduct *) getProductWithId:(NSString *)productId {
@@ -64,10 +68,10 @@
     NSMutableArray *productsJSONArray = [[NSMutableArray alloc] init];
     NSString *logMessage;
     for (SKProduct *product in products) {
-	    logMessage = [NSString stringWithFormat:@" - product : %@", [self buildJSONDictionaryOfProduct:product]];
+	    logMessage = [NSString stringWithFormat:@" - product : %@", [ProductsRequestDelegate buildJSONDictionaryOfProduct:product]];
 		DISPATCH_LOG_EVENT(self.context, logMessage);
 
-        [productsJSONArray addObject:[self buildJSONDictionaryOfProduct:product]];
+        [productsJSONArray addObject:[ProductsRequestDelegate buildJSONDictionaryOfProduct:product]];
 	}
 
     NSData *data = [NSJSONSerialization dataWithJSONObject:productsJSONArray options:NSJSONWritingPrettyPrinted error:nil];
@@ -75,7 +79,7 @@
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
-- (NSDictionary *) buildJSONDictionaryOfProduct:(SKProduct *)product {
++ (NSDictionary *) buildJSONDictionaryOfProduct:(SKProduct *)product {
     NSNumberFormatter *numberFormatter = [[NSNumberFormatter alloc] init];
     [numberFormatter setFormatterBehavior:NSNumberFormatterBehavior10_4];
     [numberFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
