@@ -77,7 +77,7 @@ package com.studiopixmix.anes.inapppurchase {
         }
 
         // CONSTANTS
-        public static const VERSION:String = "1.0.5";
+        public static const VERSION:String = "1.0.6";
         private static const EXTENSION_ID:String = "com.studiopixmix.anes.inapppurchase";
 
         private static const NATIVE_METHOD_GET_PRODUCTS:String = "getProducts";
@@ -88,6 +88,7 @@ package com.studiopixmix.anes.inapppurchase {
 
         // PROPERTIES
         private var _extContext:ExtensionContext;
+        private var _debug:Boolean;
 
         /**
          * Creates the extension context if possible. Call <code>initialize()</code> before using the rest of the extension.
@@ -205,8 +206,9 @@ package com.studiopixmix.anes.inapppurchase {
          */
         private function onStatusEvent(event:StatusEvent):void
         {
-            var eventToDispatch:Event;
+            if (_debug) trace("onStatusEvent code:", event.code, "level:", event.level);
 
+            var eventToDispatch:Event;
             switch (event.code) {
                 case InAppPurchaseInitializeEvent.INITIALIZED:
                     eventToDispatch = InAppPurchaseInitializeEvent.FromStatusEvent(event);
@@ -255,6 +257,23 @@ package com.studiopixmix.anes.inapppurchase {
 
                 dispatchEvent(eventToDispatch);
             }
+        }
+
+	    /**
+         * is in debug mode
+         */
+        public function get debug():Boolean
+        {
+            return _debug;
+        }
+
+	    /**
+         * set debug mode, traces
+         * @param value
+         */
+        public function set debug(value:Boolean):void
+        {
+            _debug = value;
         }
     }
 }

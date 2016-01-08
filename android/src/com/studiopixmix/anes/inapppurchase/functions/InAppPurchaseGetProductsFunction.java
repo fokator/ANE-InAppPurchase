@@ -141,14 +141,14 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
                 if (detailsJson == null || detailsJson.size() == 0) {
                     InAppPurchaseExtension.logToAS("No products details retrieved!");
 
-                    if (productsIds.size() > 0) responder.addInvalidIds(productsIds);
+                    if (productsIds.size() > 0) responder.addInvalidIds(new JSONArray(productsIds));
 
                 } else {
 
                     JSONArray result = createResult(detailsJson, productsIds);
 
                     // Check if there is IDs left in productIds. If this is the case, there were invalid products in the parameters.
-                    if (productsIds.size() > 0) responder.addInvalidIds(productsIds);
+                    if (productsIds.size() > 0) responder.addInvalidIds(new JSONArray(productsIds));
 
                     responder.addResultIds(result);
                 }
@@ -244,17 +244,17 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
     }
 
     private static class SkuDetailResponder {
-        private ArrayList<String> invalidIds = new ArrayList<String>();
         private JSONArray resultIds = new JSONArray();
+        private JSONArray invalidIds = new JSONArray();
 
-        void addInvalidIds(ArrayList<String> ids) {
-            for (int j = 0; j < ids.size(); j++) {
-                invalidIds.add(ids.get(j));
+        void addInvalidIds(JSONArray ids) {
+            for (int j = 0; j < ids.length(); j++) {
+                try {
+                    invalidIds.put(ids.get(j));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
-        }
-
-        Boolean hasInvalidIds() {
-            return invalidIds.size() > 0;
         }
 
         void addResultIds(JSONArray ids) {
@@ -265,10 +265,6 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
                     e.printStackTrace();
                 }
             }
-        }
-
-        Boolean hasResultIds() {
-            return resultIds.length() > 0;
         }
 
         void add(SkuDetailResponder responder) {
