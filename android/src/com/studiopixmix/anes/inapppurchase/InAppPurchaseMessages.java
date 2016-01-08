@@ -19,8 +19,6 @@ public class InAppPurchaseMessages {
 	public static final String PURCHASE_CANCELED = "EVENT_PURCHASE_CANCELED";
 	/** Event dispatched when the buy intent has succeeded and the product has been consumed. */
 	public static final String PURCHASE_SUCCESS = "EVENT_PURCHASE_SUCCESS";
-	/** Event dispatched when one or more invalid product(s) have been passed to getProducts or buyProducts. */
-	public static final String PRODUCTS_INVALID = "EVENT_PRODUCTS_INVALID";
 	/** Event dispatched when a product consumption succeeded. */
 	public static final String CONSUME_SUCCESS = "EVENT_CONSUME_SUCCESS";
 	/** Event dispatched when a product consumption has failed. */

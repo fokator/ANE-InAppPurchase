@@ -1,7 +1,6 @@
 package com.studiopixmix.anes.inapppurchase {
     import com.studiopixmix.anes.inapppurchase.event.InAppPurchaseInitializeEvent;
     import com.studiopixmix.anes.inapppurchase.event.InAppPurchaseLogEvent;
-    import com.studiopixmix.anes.inapppurchase.event.ProductsInvalidEvent;
     import com.studiopixmix.anes.inapppurchase.event.ProductsLoadedEvent;
     import com.studiopixmix.anes.inapppurchase.event.PurchaseCanceledEvent;
     import com.studiopixmix.anes.inapppurchase.event.PurchaseConsumeFailureEvent;
@@ -25,9 +24,6 @@ package com.studiopixmix.anes.inapppurchase {
 
     /** Event dispatched when the products have been loaded. */
     [Event(name="EVENT_PRODUCTS_LOADED", type="com.studiopixmix.anes.inapppurchase.event.ProductsLoadedEvent")]
-
-    /** Event dispatched when one or more invalid product(s) have been passed to getProducts or buyProducts. */
-    [Event(name="EVENT_PRODUCTS_INVALID", type="com.studiopixmix.anes.inapppurchase.event.ProductsInvalidEvent")]
 
     /** Event dispatched when the buy intent has succeeded and the product has been consumed. */
     [Event(name="EVENT_PURCHASE_SUCCESS", type="com.studiopixmix.anes.inapppurchase.event.PurchaseSuccessEvent")]
@@ -54,9 +50,9 @@ package com.studiopixmix.anes.inapppurchase {
      * To use this extension, create a new instance and call initialize() before trying to interact with it.
      * Once the ANE is initialized,
      *
+     * TODO create message object from native in "statusEvent.level"
      * TODO add optional signature verification (Android)
      * TODO add optional automatic consumable purchases
-     * TODO nice service dispose
      *
      */
     public class InAppPurchaseANE extends EventDispatcher {
@@ -81,7 +77,7 @@ package com.studiopixmix.anes.inapppurchase {
         }
 
         // CONSTANTS
-        public static const VERSION:String = "1.0.4";
+        public static const VERSION:String = "1.0.5";
         private static const EXTENSION_ID:String = "com.studiopixmix.anes.inapppurchase";
 
         private static const NATIVE_METHOD_GET_PRODUCTS:String = "getProducts";
@@ -143,16 +139,16 @@ package com.studiopixmix.anes.inapppurchase {
         }
 
         /**
-         * Request the given products information. Dispatches PRODUCTS_LOADED and PRODUCTS_INVALID events.
+         * Request the given products information. Dispatches PRODUCTS_LOADED event.
          */
         public function getProducts(productsIds:Vector.<String>):void
         {
             if (!isSupported())
                 return;
 
-            if (productsIds.length == 0) {
+            if (productsIds == null || productsIds.length == 0) {
 
-                dispatchEvent(new ProductsInvalidEvent(productsIds));
+                throw new Error("Missing productsIds!");
                 return;
             }
 
@@ -222,10 +218,6 @@ package com.studiopixmix.anes.inapppurchase {
                     break;
                 case ProductsLoadedEvent.PRODUCTS_LOADED:
                     eventToDispatch = ProductsLoadedEvent.FromStatusEvent(event);
-
-                    break;
-                case ProductsInvalidEvent.PRODUCTS_INVALID:
-                    eventToDispatch = ProductsInvalidEvent.FromStatusEvent(event);
 
                     break;
                 case PurchaseSuccessEvent.PURCHASE_SUCCESS:

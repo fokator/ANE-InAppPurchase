@@ -12,12 +12,17 @@ package com.studiopixmix.anes.inapppurchase.event {
         public static const PRODUCTS_LOADED:String = "EVENT_PRODUCTS_LOADED";
 
         private var _products:Vector.<PurchaseProduct>;
+        private var _invalidIds:Array;
+        private var _error:Error;
 
-        public function ProductsLoadedEvent(products:Vector.<PurchaseProduct>)
+        public function ProductsLoadedEvent(products:Vector.<PurchaseProduct>, invalidIds:Array, error:Error = null)
         {
             super(PRODUCTS_LOADED);
 
             _products = products;
+            _invalidIds = invalidIds;
+
+            _error = error;
         }
 
         public function get products():Vector.<PurchaseProduct>
@@ -31,19 +36,34 @@ package com.studiopixmix.anes.inapppurchase.event {
          */
         public static function FromStatusEvent(statusEvent:StatusEvent):ProductsLoadedEvent
         {
+            // statusEvent.level = {resultIds:" + resultIds.toString() + ",invalidIds:" + invalidIds.toString() + "}
             try {
-                const productsArray:Array = JSON.parse(statusEvent.level) as Array;
+                var object:Object = JSON.parse(statusEvent.level);
+
+                const productsArray:Array = object.resultIds as Array;
                 const numProductsInArray:int = productsArray.length;
                 const products:Vector.<PurchaseProduct> = new Vector.<PurchaseProduct>();
 
-                for (var i:int = 0; i < numProductsInArray; i++)
+                for (var i:int = 0; i < numProductsInArray; i++) {
                     products.push(PurchaseProduct.FromJSONProduct(productsArray[i]));
-
-                return new ProductsLoadedEvent(products);
+                }
+                trace("object.invalidIds: " + object.invalidIds);
+                return new ProductsLoadedEvent(products, object.invalidIds as Array);
             } catch (e:Error) {
+
+                return new ProductsLoadedEvent(new <PurchaseProduct>[], [], e);
             }
 
-            return new ProductsLoadedEvent(new <PurchaseProduct>[]);
         }
+
+	    public function get invalidIds():Array
+	    {
+		    return _invalidIds;
+	    }
+
+	    public function get error():Error
+	    {
+		    return _error;
+	    }
     }
 }
