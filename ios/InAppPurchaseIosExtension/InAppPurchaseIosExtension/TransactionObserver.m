@@ -17,10 +17,13 @@
 @implementation TransactionObserver
 
 - (void) paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions {
+    NSString *logMessage;
     for (SKPaymentTransaction *transaction in transactions) {
+        NSString *logMessage;
         switch (transaction.transactionState) {
             case SKPaymentTransactionStateFailed:
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
+                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStateFailed error.code: %ld", transaction.error.code];
                 if(transaction.error.code == SKErrorPaymentCancelled)
                     DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASE_CANCELED, (uint8_t*)[transaction.error.localizedDescription UTF8String]);
                 else
@@ -28,14 +31,34 @@
                 break;
             
             case SKPaymentTransactionStatePurchased:
+                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStatePurchased"];
                 //[[SKPaymentQueue defaultQueue] finishTransaction:transaction]; // TODO consume after purchase? optional configuration.
                 DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASE_SUCCESS, (uint8_t*)[[self buildJSONStringOfPurchaseWithTransaction:transaction] UTF8String]);
                 break;
                 
             case SKPaymentTransactionStateRestored:
+                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStateRestored"];
                 // Does nothing, the restore process will be executed in the paymentQueueRestoreCompletedTransationFinished method.
                 break;
+
+            case SKPaymentTransactionStateDeferred:
+                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStateDeferred"];
+                // Does nothing?
+                break;
+
+            case SKPaymentTransactionStatePurchasing:
+                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStatePurchasing"];
+                // Does nothing?
+                break;
+
+            default:
+                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:DEFAULT"];
         }
+
+        if (logMessage != NULL) {
+             DISPATCH_LOG_EVENT(self.context, logMessage);
+        }
+
     }
 }
 

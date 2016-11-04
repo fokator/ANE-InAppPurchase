@@ -55,8 +55,11 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
             }
 
         } catch (Exception e) {
-            InAppPurchaseExtension.logToAS("Error while retrieving the product ID! " + e.toString());
-            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString());
+
+            String exStr = "Error while retrieving the product ID! " + InAppPurchaseExtension.getStackString(e);
+
+            InAppPurchaseExtension.logToAS(exStr);
+            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, exStr);
             return null;
         }
 
@@ -76,8 +79,11 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
             buyIntentBundle = service.getBuyIntent(InAppPurchaseExtension.API_VERSION, packageName, productId, "inapp", payload);
 
         } catch (Exception e) {
-            InAppPurchaseExtension.logToAS("Error while the buy intent! " + e.toString());
-            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString());
+
+            String exStr = "Request Error while the buy intent! " + InAppPurchaseExtension.getStackString(e);
+
+            InAppPurchaseExtension.logToAS(exStr);
+            mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, exStr);
             return;
         }
 
@@ -94,8 +100,11 @@ public class InAppPurchaseBuyProductFunction implements FREFunction {
                     intent.putExtra("DEV_PAYLOAD", payload);
                     mContext.getActivity().startActivity(intent);
                 } catch (Exception e) {
-                    InAppPurchaseExtension.logToAS("Error while the buy intent!\n " + e.toString() + "\n" + InAppPurchaseExtension.getStackString(e));
-                    mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, e.toString());
+
+                    String exStr = "Response Error responseCode:" + responseCode + " " + InAppPurchaseExtension.getStackString(e);
+
+                    InAppPurchaseExtension.logToAS(exStr);
+                    mContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASE_FAILURE, exStr);
                 }
 
                 break;

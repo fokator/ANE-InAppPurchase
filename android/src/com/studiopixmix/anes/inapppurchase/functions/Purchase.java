@@ -16,7 +16,13 @@ public class Purchase extends JSONObject {
         put("transactionTimestamp", item.getInt("purchaseTime"));
         put("purchaseToken", item.get("purchaseToken"));
         put("purchaseState", item.get("purchaseState"));
-        put("orderId", item.get("orderId"));
+        if (item.has("orderId")) {
+            // A unique order identifier for the transaction. This identifier corresponds to the Google payments order ID.
+            put("orderId", item.get("orderId"));
+        } else {
+            // If the order is a test purchase made through the In-app Billing Sandbox, orderId is blank.
+            put("orderId", "");
+        }
         put("signature", dataSignature);
         put("playStoreResponse", purchaseData);
         if (item.has("developerPayload")) {
