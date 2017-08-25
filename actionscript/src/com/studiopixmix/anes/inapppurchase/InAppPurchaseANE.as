@@ -77,7 +77,7 @@ package com.studiopixmix.anes.inapppurchase {
         }
 
         // CONSTANTS
-        public static const VERSION:String = "1.0.6";
+        public static const VERSION:String = "1.0.8";
         private static const EXTENSION_ID:String = "com.studiopixmix.anes.inapppurchase";
 
         private static const NATIVE_METHOD_GET_PRODUCTS:String = "getProducts";
