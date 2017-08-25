@@ -90,13 +90,18 @@
 
 - (NSString *) buildJSONStringOfPurchaseWithTransaction:(SKPaymentTransaction *)transaction {
     NSNumber *transactionTimestamp = [NSNumber numberWithDouble:[transaction.transactionDate timeIntervalSince1970]];
-
+    
+    NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
+    NSData *receipt = [NSData dataWithContentsOfURL:receiptURL];
+    NSString *receiptString = [receipt base64EncodedStringWithOptions:0];
+    
     NSDictionary *purchaseDictionary = @{
         @"productId" : transaction.payment.productIdentifier,
         @"transactionTimestamp" : transactionTimestamp,
         @"applicationUsername" : (transaction.payment.applicationUsername != nil ? transaction.payment.applicationUsername : @""),
         @"transactionId" : transaction.transactionIdentifier,
-        @"transactionReceipt" : [[NSString alloc] initWithData:transaction.transactionReceipt encoding:NSUTF8StringEncoding]
+        @"transactionReceipt" : [[NSString alloc] initWithData:transaction.transactionReceipt encoding:NSUTF8StringEncoding],
+        @"storeReceipt" : receiptString
     };
     
     NSData *data = [NSJSONSerialization dataWithJSONObject:purchaseDictionary options:NSJSONWritingPrettyPrinted error:nil];
