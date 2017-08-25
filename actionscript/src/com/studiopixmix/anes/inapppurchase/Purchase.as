@@ -11,7 +11,9 @@ package com.studiopixmix.anes.inapppurchase {
         // iOS only
         public var applicationUsername:String;
         public var transactionId:String;
+        // Deprecated https://developer.apple.com/documentation/storekit/skpaymenttransaction/1617722-transactionreceipt
         public var transactionReceipt:String;
+        public var storeReceipt:String;
 
         // Android only
         public var developerPayload:String;
@@ -20,6 +22,8 @@ package com.studiopixmix.anes.inapppurchase {
         public var playStoreResponse:String;
         public var signature:String;
         public var purchaseState:String;
+
+        public var raw:Object;
 
         public function Purchase()
         {
@@ -48,12 +52,17 @@ package com.studiopixmix.anes.inapppurchase {
         {
             const newPurchase:Purchase = new Purchase();
 
+            newPurchase.raw = jsonPurchase;
+
             newPurchase.productId = jsonPurchase.productId;
             newPurchase.transactionDate = new Date();
             newPurchase.transactionDate.setTime(jsonPurchase.transactionTimestamp);
+
             newPurchase.applicationUsername = jsonPurchase.hasOwnProperty("applicationUsername") ? jsonPurchase.applicationUsername : "";
             newPurchase.transactionId = jsonPurchase.hasOwnProperty("transactionId") ? jsonPurchase.transactionId : "";
             newPurchase.transactionReceipt = jsonPurchase.hasOwnProperty("transactionReceipt") ? jsonPurchase.transactionReceipt : "";
+            newPurchase.storeReceipt = jsonPurchase.hasOwnProperty("storeReceipt") ? jsonPurchase.storeReceipt : "";
+
             newPurchase.developerPayload = jsonPurchase.hasOwnProperty("developerPayload") ? jsonPurchase.developerPayload : "";
             newPurchase.purchaseToken = jsonPurchase.hasOwnProperty("purchaseToken") ? jsonPurchase.purchaseToken : "";
             newPurchase.orderId = jsonPurchase.hasOwnProperty("orderId") ? jsonPurchase.orderId : "";

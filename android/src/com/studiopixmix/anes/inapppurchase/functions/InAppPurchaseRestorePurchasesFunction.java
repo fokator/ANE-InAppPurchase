@@ -33,7 +33,7 @@ public class InAppPurchaseRestorePurchasesFunction implements FREFunction {
             InAppPurchaseExtension.logToAS("PurchasesList value : " + purchasesList);
 
         } catch (Exception e) {
-            InAppPurchaseExtension.logToAS("Error while retrieving the previous purchases : " + e.toString() + "\n at " + e.getStackTrace());
+            InAppPurchaseExtension.logToAS("Error while retrieving the previous purchases : " + e.toString() + "\n at " + InAppPurchaseExtension.getStackString(e));
             extensionContext.dispatchStatusEventAsync(InAppPurchaseMessages.PURCHASES_RETRIEVING_FAILED, e.getMessage());
             return null;
         }
