@@ -62,6 +62,13 @@
     }
 }
 
+// Sent when a user initiates an IAP buy from the App Store
+- (BOOL)paymentQueue:(SKPaymentQueue *)queue shouldAddStorePayment:(SKPayment *)payment forProduct:(SKProduct *)product NS_SWIFT_NAME(paymentQueue(_:shouldAddStorePayment:for:)) {
+    DISPATCH_LOG_EVENT(self.context, @"execute shouldAddStorePayment");
+    return TRUE;
+    
+}
+
 -(void) paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error {
     DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASES_RETRIEVING_FAILED, (uint8_t*) [error.localizedDescription UTF8String]);
 }
