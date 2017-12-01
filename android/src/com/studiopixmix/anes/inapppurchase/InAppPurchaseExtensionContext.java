@@ -1,5 +1,6 @@
 package com.studiopixmix.anes.inapppurchase;
 
+import android.util.Log;
 import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.os.IBinder;
@@ -20,13 +21,18 @@ public class InAppPurchaseExtensionContext extends FREContext {
     private IInAppBillingService mService;
     private ServiceConnection mServiceConn;
 
+    /**
+     * The logging TAG.
+     */
+    public static String TAG = "InAppPurchaseExtensionContext";
+
     // CONSTRUCTOR :
     public InAppPurchaseExtensionContext() {
         super();
 
         connectToService();
     }
-    
+
     //////////////////////
     // SPECIFIC METHODS //
     //////////////////////
@@ -73,7 +79,17 @@ public class InAppPurchaseExtensionContext extends FREContext {
         return mServiceConn;
     }
 
-
+    @Override
+    public void dispatchStatusEventAsync(String s, String s1) {
+      try {
+        super.dispatchStatusEventAsync(s, s1);
+      } catch (IllegalArgumentException ex) {
+        ex.printStackTrace();
+      } catch (IllegalStateException ex) {
+        ex.printStackTrace();
+      }
+     }
+     
     /////////////////
     // FRE METHODS //
     /////////////////
@@ -86,8 +102,11 @@ public class InAppPurchaseExtensionContext extends FREContext {
 
         // Unbinds the InAppBillingService if needed. This prevents memory leaks on the device.
         if (mService != null) {
-
+          try {
             getActivity().unbindService(mServiceConn);
+          } catch (Exception e) {
+            Log.e(TAG, e.toString());
+          }
         }
     }
 
