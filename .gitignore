@@ -1,14 +1,24 @@
+# xcode
 .DS_Store
-ios/InAppPurchaseIosExtension/InAppPurchaseIosExtension.xcodeproj/project.xcworkspace/xcuserdata/antoinekleinpeter.xcuserdatad/UserInterfaceState.xcuserstate
+ios/InAppPurchaseIosExtension/InAppPurchaseIosExtension.xcodeproj/project.xcworkspace/xcuserdata
+ios/InAppPurchaseIosExtension/InAppPurchaseIosExtension.xcodeproj/xcuserdata
+
+# project
 bin
 build/build.config
+build/build.bat
+
+# android
 android/.classpath
+android/bin
+android/gen
+
+# as3
 actionscript/.actionScriptProperties
 actionscript/.flexLibProperties
 actionscript/.project
 actionscript/.settings/org.eclipse.core.resources.prefs
 actionscript/bin
-android/bin
-android/gen/
+
+# idea
 .idea/workspace.xml
-build/build.bat
