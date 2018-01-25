@@ -17,13 +17,12 @@
 @implementation TransactionObserver
 
 - (void) paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions {
-    NSString *logMessage;
     for (SKPaymentTransaction *transaction in transactions) {
         NSString *logMessage;
         switch (transaction.transactionState) {
             case SKPaymentTransactionStateFailed:
                 [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
-                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStateFailed error.code: %ld", transaction.error.code];
+                logMessage = [NSString stringWithFormat:@"updatedTransactions id:%@ transactionState:SKPaymentTransactionStateFailed error.code: %ld", transaction.transactionIdentifier, transaction.error.code];
                 if(transaction.error.code == SKErrorPaymentCancelled)
                     DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASE_CANCELED, (uint8_t*)[transaction.error.localizedDescription UTF8String]);
                 else
@@ -31,28 +30,28 @@
                 break;
 
             case SKPaymentTransactionStatePurchased:
-                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStatePurchased"];
+                logMessage = [NSString stringWithFormat:@"updatedTransactions id:%@ transactionState:SKPaymentTransactionStatePurchased", transaction.transactionIdentifier];
                 //[[SKPaymentQueue defaultQueue] finishTransaction:transaction]; // TODO consume after purchase? optional configuration.
-                DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASE_SUCCESS, (uint8_t*)[[self buildJSONStringOfPurchaseWithTransaction:transaction] UTF8String]);
+                DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASE_SUCCESS, (uint8_t*)[[TransactionObserver buildJSONStringOfPurchaseWithTransaction:transaction] UTF8String]);
                 break;
 
             case SKPaymentTransactionStateRestored:
-                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStateRestored"];
+                logMessage = [NSString stringWithFormat:@"updatedTransactions id:%@ transactionState:SKPaymentTransactionStateRestored", transaction.transactionIdentifier];
                 // Does nothing, the restore process will be executed in the paymentQueueRestoreCompletedTransationFinished method.
                 break;
 
             case SKPaymentTransactionStateDeferred:
-                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStateDeferred"];
+                logMessage = [NSString stringWithFormat:@"updatedTransactions id:%@ transactionState:SKPaymentTransactionStateDeferred", transaction.transactionIdentifier];
                 // Does nothing?
                 break;
 
             case SKPaymentTransactionStatePurchasing:
-                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:SKPaymentTransactionStatePurchasing"];
+                logMessage = [NSString stringWithFormat:@"updatedTransactions id:%@ transactionState:SKPaymentTransactionStatePurchasing", transaction.transactionIdentifier];
                 // Does nothing?
                 break;
 
             default:
-                logMessage = [NSString stringWithFormat:@"updatedTransactions transactionState:DEFAULT"];
+                logMessage = [NSString stringWithFormat:@"updatedTransactions id:%@ transactionState:DEFAULT", transaction.transactionIdentifier];
         }
 
         if (logMessage != NULL) {
@@ -72,13 +71,17 @@
     DISPATCH_ANE_EVENT(self.context, EVENT_PURCHASES_RETRIEVING_FAILED, (uint8_t*) [error.localizedDescription UTF8String]);
 }
 
+// TODO: this method is obsolete until we use only consumable products
 -(void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
     NSMutableArray *purchasesSrt = [NSMutableArray array];
     NSString *logMessage;
 
     DISPATCH_LOG_EVENT(self.context, @"Let's get ready for a loop!");
     for(SKPaymentTransaction *transaction in queue.transactions) {
-        logMessage = [NSString stringWithFormat:@"product identifier value : %@", transaction.payment.productIdentifier];
+        NSString *transactionState = [TransactionObserver formatTypeToString:transaction.transactionState];
+        logMessage = [NSString stringWithFormat:@"transaction id: %@, state: %@, error: %@, productId: %@",
+                                                transaction.transactionIdentifier, transactionState, transaction.error,
+                                                transaction.payment.productIdentifier];
         DISPATCH_LOG_EVENT(self.context, logMessage);
 
         switch (transaction.transactionState) {
@@ -87,7 +90,7 @@
               break;
             default:
 
-              [purchasesSrt addObject: [self buildJSONStringOfPurchaseWithTransaction:transaction]];
+              [purchasesSrt addObject: [TransactionObserver buildJSONStringOfPurchaseWithTransaction:transaction]];
         }
     }
 
@@ -101,32 +104,23 @@
 }
 
 
-- (NSString *) buildJSONStringOfPurchaseWithTransaction:(SKPaymentTransaction *)transaction {
++ (NSString *) buildJSONStringOfPurchaseWithTransaction:(SKPaymentTransaction *)transaction {
 
     NSNumber *transactionTimestamp = [NSNumber numberWithDouble:[transaction.transactionDate timeIntervalSince1970]];
     NSURL *receiptURL = [[NSBundle mainBundle] appStoreReceiptURL];
     NSData *receipt = [NSData dataWithContentsOfURL:receiptURL];
     NSString *receiptString = [receipt base64EncodedStringWithOptions:0];
 
-    // https://developer.apple.com/documentation/storekit/skpaymenttransactionstate?language=objc (SKPaymentTransactionState)
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  - transactionState: %@", [self formatTypeToString:transaction.transactionState]]));
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  - payment.error: %@", transaction.error]));
-
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  productId: %@", transaction.payment.productIdentifier]));
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  transactionTimestamp: %@", transactionTimestamp]));
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  applicationUsername: %@", (transaction.payment.applicationUsername != nil ? transaction.payment.applicationUsername : @"")]));
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  transactionId: %@", transaction.transactionIdentifier]));
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  transactionReceipt: %@", [[NSString alloc] initWithData:transaction.transactionReceipt encoding:NSUTF8StringEncoding]]));
-    DISPATCH_LOG_EVENT(self.context, ([NSString stringWithFormat:@" -  storeReceipt: %@", receiptString]));
+    NSString *transactionReceipt = [[NSString alloc] initWithData:transaction.transactionReceipt encoding:NSUTF8StringEncoding];
 
     NSDictionary *purchaseDictionary = @{
-        @"productId" : transaction.payment.productIdentifier,
+        @"productId" : convertNil(transaction.payment.productIdentifier),
         @"transactionTimestamp" : transactionTimestamp,
-        @"applicationUsername" : (transaction.payment.applicationUsername != nil ? transaction.payment.applicationUsername : @""),
-        @"transactionId" : transaction.transactionIdentifier,
-        @"transactionState" : [self formatTypeToString:transaction.transactionState],
-        @"transactionReceipt" : [[NSString alloc] initWithData:transaction.transactionReceipt encoding:NSUTF8StringEncoding],
-        @"storeReceipt" : (receiptString != nil ? receiptString : @"")
+        @"applicationUsername" : convertNil(transaction.payment.applicationUsername),
+        @"transactionId" : convertNil(transaction.transactionIdentifier),
+        @"transactionState" : [TransactionObserver formatTypeToString:transaction.transactionState],
+        @"transactionReceipt" : convertNil(transactionReceipt),
+        @"storeReceipt" : convertNil(receiptString)
     };
 
     NSData *data = [NSJSONSerialization dataWithJSONObject:purchaseDictionary options:NSJSONWritingPrettyPrinted error:nil];
@@ -134,7 +128,7 @@
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
-- (NSString*)formatTypeToString:(SKPaymentTransactionState)transactionState {
++ (NSString*)formatTypeToString:(SKPaymentTransactionState)transactionState {
     NSString *result = nil;
 
     switch (transactionState) {
@@ -164,4 +158,5 @@
 
     return result;
 }
+
 @end

@@ -85,14 +85,12 @@
     [numberFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
     [numberFormatter setLocale:product.priceLocale];
     
-    return [NSDictionary dictionaryWithObjectsAndKeys:
-     product.productIdentifier, @"id",
-     product.localizedTitle, @"title",
-     product.localizedDescription, @"description",
-     product.price, @"price",
-     [product.priceLocale objectForKey:NSLocaleCurrencyCode], @"priceCurrencyCode",
-     [product.priceLocale objectForKey:NSLocaleCurrencySymbol], @"priceCurrencySymbol",
-     [numberFormatter stringFromNumber:product.price], @"displayPrice",
-     nil];
+    return @{@"id": product.productIdentifier,
+            @"title": product.localizedTitle,
+            @"description": product.localizedDescription,
+            @"price": product.price,
+            @"priceCurrencyCode": [product.priceLocale objectForKey:NSLocaleCurrencyCode],
+            @"priceCurrencySymbol": [product.priceLocale objectForKey:NSLocaleCurrencySymbol],
+            @"displayPrice": [numberFormatter stringFromNumber:product.price]};
 }
 @end
