@@ -26,6 +26,8 @@ package com.studiopixmix.anes.inapppurchase {
          */
         public var price:Number;
 
+        public var priceAmountMicros:String;
+
         public var priceCurrencyCode:String;
 
         public var priceCurrencySymbol:String;
@@ -48,6 +50,7 @@ package com.studiopixmix.anes.inapppurchase {
             product.title = jsonProduct.title;
             product.description = jsonProduct.description;
             product.price = jsonProduct.price;
+            product.priceAmountMicros = jsonProduct.priceAmountMicros;
             product.priceCurrencyCode = jsonProduct.priceCurrencyCode;
             product.priceCurrencySymbol = jsonProduct.priceCurrencySymbol;
             product.displayPrice = jsonProduct.displayPrice;
