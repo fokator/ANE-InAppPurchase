@@ -196,6 +196,17 @@ package com.studiopixmix.anes.inapppurchase {
             _extContext.call(NATIVE_METHOD_RESTORE_PURCHASES);
         }
 
+        /**
+         * EXPERIMENTAL -> Don't use this method if you don't know what it is doing!
+         * @param functionName
+         * @param args
+         * @return
+         */
+        public function call(functionName:String, ... args):*
+        {
+            return _extContext.call.apply(_extContext, [functionName].concat(args));
+        }
+
         /////////////////
         // PRIVATE API //
         /////////////////

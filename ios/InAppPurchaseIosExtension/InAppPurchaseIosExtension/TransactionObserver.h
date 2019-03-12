@@ -10,10 +10,14 @@
 #import <StoreKit/StoreKit.h>
 #import "FlashRuntimeExtensions.h"
 
+// helper method to generating dictionaries for json encoding
+id convertNil(id value) { return value != nil ? value : [NSNull null]; }
+
 @interface TransactionObserver : NSObject<SKPaymentTransactionObserver>
 
 @property (nonatomic, assign) FREContext context;
 
-- (NSString *) buildJSONStringOfPurchaseWithTransaction:(SKPaymentTransaction *)transaction;
++ (NSString *) buildJSONStringOfPurchaseWithTransaction:(SKPaymentTransaction *)transaction;
++ (NSString *) formatTypeToString:(SKPaymentTransactionState)transactionState;
 
 @end

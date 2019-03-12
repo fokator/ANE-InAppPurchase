@@ -95,7 +95,7 @@ DEFINE_ANE_FUNCTION(consumeProduct) {
     NSArray *transactions = [[SKPaymentQueue defaultQueue] transactions];
     SKPaymentTransaction *toConsume = nil;
     for (SKPaymentTransaction *transaction in transactions) {
-        if ([productId compare:transaction.payment.productIdentifier] == NSOrderedSame) {
+        if ([productId isEqualToString:transaction.payment.productIdentifier]) {
             toConsume = transaction;
             break;
         }
@@ -107,7 +107,7 @@ DEFINE_ANE_FUNCTION(consumeProduct) {
         NSString *message = [NSString stringWithFormat:@"Consume transaction: [%@]", toConsume.payment.productIdentifier];
         DISPATCH_LOG_EVENT(context, message);
 
-        NSString *transactionJson = [transactionObserver buildJSONStringOfPurchaseWithTransaction:toConsume];
+        NSString *transactionJson = [TransactionObserver buildJSONStringOfPurchaseWithTransaction:toConsume];
         DISPATCH_ANE_EVENT(context, EVENT_CONSUME_SUCCESS, (uint8_t*)[transactionJson UTF8String]);
 
     } else {
@@ -121,11 +121,51 @@ DEFINE_ANE_FUNCTION(consumeProduct) {
 
 DEFINE_ANE_FUNCTION(restorePurchase) {
     
-    DISPATCH_LOG_EVENT(context, @"Restoring the previous purchases ...");
-    transactionObserver.context = context;
-    [[SKPaymentQueue defaultQueue] addTransactionObserver:transactionObserver];
-    [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
-    
+    DISPATCH_LOG_EVENT(context, @"Restoring the previous purchases ... (only state purchased are sent)");
+
+    NSMutableArray *transactionsArray = [NSMutableArray array];
+    NSString *logMessage;
+
+    NSArray *transactions = [[SKPaymentQueue defaultQueue] transactions];
+    for (SKPaymentTransaction *transaction in transactions) {
+
+        NSString *transactionState = [TransactionObserver formatTypeToString:transaction.transactionState];
+        logMessage = [NSString stringWithFormat:@"transaction id: %@, state: %@, error: %@, productId: %@",
+                                                transaction.transactionIdentifier, transactionState, transaction.error,
+                                                transaction.payment.productIdentifier];
+        DISPATCH_LOG_EVENT(context, logMessage);
+
+        if (transaction.transactionState == SKPaymentTransactionStatePurchased) {
+
+            NSString *transactionJson = [TransactionObserver buildJSONStringOfPurchaseWithTransaction:transaction];
+            DISPATCH_LOG_EVENT(context, transactionJson);
+
+            [transactionsArray addObject: transactionJson];
+        }
+    }
+
+    DISPATCH_LOG_EVENT(context, @"Purchases array completed.");
+    NSString *result = [transactionsArray componentsJoinedByString:@","];
+    logMessage = [NSString stringWithFormat:@"Complete. Returning the following product IDs list : %@", result];
+    DISPATCH_LOG_EVENT(context, logMessage);
+
+    result = [NSString stringWithFormat:@"[%@]", result];
+    DISPATCH_ANE_EVENT(context, EVENT_PURCHASES_RETRIEVED, (uint8_t*) result.UTF8String);
+
+    return NULL;
+}
+
+// used for debug only - not in public api
+DEFINE_ANE_FUNCTION(printTransactions) {
+
+    DISPATCH_LOG_EVENT(context, @"Print transactions ...");
+
+    NSArray *transactions = [[SKPaymentQueue defaultQueue] transactions];
+    for (SKPaymentTransaction *transaction in transactions) {
+        NSString *transactionState = [TransactionObserver formatTypeToString:transaction.transactionState];
+        NSLog(@"transaction id: %@, state: %@", transaction.transactionIdentifier, transactionState);
+    }
+
     return NULL;
 }
 
@@ -137,7 +177,8 @@ void InAppPurchaseIosExtensionContextInitializer( void* extData, const uint8_t* 
         MAP_FUNCTION(getProducts, NULL),
         MAP_FUNCTION(consumeProduct, NULL),
         MAP_FUNCTION(buyProduct, NULL),
-        MAP_FUNCTION(restorePurchase, NULL)
+        MAP_FUNCTION(restorePurchase, NULL),
+        MAP_FUNCTION(printTransactions, NULL)
     };
         
     *numFunctionsToSet = sizeof( mopubFunctionMap ) / sizeof( FRENamedFunction );

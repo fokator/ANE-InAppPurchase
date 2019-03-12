@@ -186,16 +186,15 @@ public class InAppPurchaseGetProductsFunction implements FREFunction {
                 currentObject.put("id", currentJsonObject.get("productId"));
                 currentObject.put("title", currentJsonObject.get("title"));
                 currentObject.put("description", currentJsonObject.get("description"));
+                currentObject.put("priceAmountMicros", currentJsonObject.get("price_amount_micros"));
+                currentObject.put("priceCurrencyCode", currentJsonObject.get("price_currency_code"));
+                // The fully formated price to display in your app, with the currency symbol.
+                currentObject.put("displayPrice", currentJsonObject.get("price").toString());
 
                 // Formats the price to an amount rounded to 2 decimals.
                 Number number = format.parse(currentJsonObject.get("price_amount_micros").toString());
                 currentObject.put("price", format.parse(String.format("%.2f", number.doubleValue() / 1000000.0)).doubleValue());
-
-                currentObject.put("priceCurrencyCode", currentJsonObject.get("price_currency_code"));
                 currentObject.put("priceCurrencySymbol", currentJsonObject.get("price").toString().replaceAll("[0-9.,\\s]", ""));
-
-                // The fully formated price to display in your app, with the currency symbol.
-                currentObject.put("displayPrice", currentJsonObject.get("price").toString());
 
                 details.add(currentObject);
 
